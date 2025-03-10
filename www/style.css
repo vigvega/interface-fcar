@@ -1,0 +1,103 @@
+/* Encabezado */
+.skin-blue .main-header .logo{
+  background-color: #011f41;
+}
+
+.skin-blue .main-header .logo:hover{
+  background-color: #011f41;
+}
+
+.skin-blue .main-header .navbar{
+  background-color: #011f41;
+}
+
+
+/* Barra lateral */
+.skin-blue .main-sidebar {
+  background-color: #002955;
+}
+
+/* Fondo */
+.content-wrapper, .right-side {
+    background-color: #011f41;
+}
+
+/* Homepage izq */
+#home-primero{
+  background:  #011f41;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+}
+
+/* Homepage der */
+#home-segundo{
+  background-color: #011f41;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Elementos homepage */
+.title{
+  color: #0bddf6;
+}
+
+.main-description{
+  color: white;
+  font-family: 'Lora', serif;
+}
+
+.secondary-description{
+  color: white;
+}
+
+.logo{
+  width: 55vh;
+  height: 55vh;
+}
+
+.div-btn{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn_start{
+  background-color: white;
+  border-color: white;
+  color: #011f41;
+  width: 200px;
+  height: 50px;
+}
+
+.btn-github{
+  background-color: transparent;
+  border-color: white;
+  width: 200px;
+  height: 50px;
+  margin-left: 20px;
+}
+
+.btn-github:hover{
+  background-color: white;
+  color: #011f41;
+}
+
+/* Imagen cuando no hay plot */
+.img_no_data{
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 40vh;
+  margin-top: 20px;
+}
+
+.box-sm {
+  display: flex;
+  align-items: center;
+}
