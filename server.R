@@ -1,3 +1,12 @@
+library(shinydashboard)
+library(bslib)
+library(readxl)
+library(DT)
+library(igraph)
+library(visNetwork)
+library(datamods)
+devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
+
 igraph_a_visNetwork <- function(grafo) {
   # Convertir a formato visNetwork
   visIgraph(grafo) %>%
