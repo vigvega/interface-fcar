@@ -6,6 +6,10 @@ library(igraph)
 library(visNetwork)
 library(datamods)
 devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
+# editbl
+
+games <- read.csv("~/Desktop/TFG/games.csv", row.names=1)
+fca <- FormalContext$new(games)
 
 header <- dashboardHeader(title = "FACR PACKAGE")
 
@@ -62,63 +66,42 @@ body <- dashboardBody(
             ),
             fluidRow(class = "box1",
               column(4,
-                box(
-                  width = 12,
-                  #collapsible = TRUE,
-                  status = "primary",
-                  solidHeader = TRUE,
-                  title = "Formal Context",
-                  fluidRow(
-                    div(class = "box-sm",
-                        column(10, verbatimTextOutput("code_fc")),
-                        column(2, actionButton("btn_fc", "", icon = icon("play")))
-                        ),
-                  )
-                ),
-                box(
-                  width = 12,
-                  #collapsible = TRUE,
-                  status = "danger",
-                  solidHeader = TRUE,
-                  title = "Set of concepts",
-                  fluidRow(
-                    div(class = "box-sm",
-                        column(10, verbatimTextOutput("code_concepts")),
-                        column(2, actionButton("btn_concepts", "", icon = icon("play")))
-                    ),
-                  )
-                ),
-                box(
-                  width = 12,
-                  #collapsible = TRUE,
-                  status = "success",
-                  solidHeader = TRUE,
-                  title = "Set of implications",
-                  fluidRow(
-                    div(class = "box-sm",
-                        column(10, verbatimTextOutput("code_implications")),
-                        column(2, actionButton("btn_implications", "", icon = icon("play")))
-                    ),
-                  )
-                )
+                     box(width = 12,
+                     selectInput(
+                       "select",
+                       "Select options below:",
+                       list("Objects and Attributes" = "oa", "Concepts" = "c", "Implications" = "i")
+                     ),
+                     conditionalPanel(
+                       condition = "input.select == 'oa'",
+                       div(id = "panelObjectsAttributesLeft",
+                           selectInput(
+                             "selectObjects",
+                             "See attributes in common for:",
+                             choices = NULL,
+                             multiple = TRUE
+                           )
+                           )
+                     ),
+                     conditionalPanel(
+                       condition = "input.select == 'a'",
+                       div(id = "panelB",
+                           h3("Este es el Panel B"),
+                           textInput("inputB", "Input para B"))
+                     )
+                     )
               ),
               column(8,
-              box(
-                title = "Plot the concept lattice",
-                width = 12,
-                #collapsible = TRUE,
-                status = "warning",
-                solidHeader = TRUE,
-                conditionalPanel(
-                  condition = "output.datasetNull",
-                  imageOutput("img_no_data")
-                ),
-                conditionalPanel(
-                  condition = "!output.datasetNull",
-                  #plotOutput("graphFormalConcept")
-                  visNetworkOutput("graphFormalConcept", height = "600px")
+                box(widht = 12,
+                  conditionalPanel(
+                    condition = "input.select == 'oa'",
+                    div(id = "panelObjectsAttributesRight",
+                        uiOutput("btn_objects"),
+                        uiOutput("btn_attributes"),
+                        verbatimTextOutput("clicked_button")
+                    )
+                  )
                 )
-              )
               )
             )
     )# Fin get started

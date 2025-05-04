@@ -1,0 +1,30 @@
+---
+title: "misPruebas"
+output: html_document
+date: "2025-04-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(fcaR)
+games <- read.csv("~/Desktop/TFG/games.csv", row.names=1)
+fca <- FormalContext$new(games)
+```
+
+```{r}
+fca$objects
+```
+
+```{r}
+fca$attributes
+```
+
+```{r}
+set_objects <- Set$new(fca$objects)
+set_objects$assign(Zelda = 1)
+set_objects$assign(Link = 1)
+fca$intent(set_objects)
+```
