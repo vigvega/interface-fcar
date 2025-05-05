@@ -96,8 +96,12 @@ body <- dashboardBody(
                   conditionalPanel(
                     condition = "input.select == 'oa'",
                     div(id = "panelObjectsAttributesRight",
-                        uiOutput("btn_objects"),
-                        uiOutput("btn_attributes"),
+                        column(6,
+                        uiOutput("btn_objects")
+                        ),
+                        column(6,
+                        uiOutput("btn_attributes")
+                        ),
                         verbatimTextOutput("clicked_button")
                     )
                   )

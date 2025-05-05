@@ -25,6 +25,7 @@ fca$attributes
 ```{r}
 set_objects <- Set$new(fca$objects)
 set_objects$assign(Zelda = 1)
-set_objects$assign(Link = 1)
+#set_objects$assign(Megaman = 1)
 fca$intent(set_objects)
+print(set_objects)
 ```

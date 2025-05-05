@@ -10,7 +10,6 @@ devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
 games <- read.csv("~/Desktop/TFG/games.csv", row.names=1)
 fca <- FormalContext$new(games)
 set_objects <- Set$new(fca$objects)
-
 server <- function(input, output, session) {
 
   # Evento para ir a get started
@@ -29,35 +28,88 @@ server <- function(input, output, session) {
     output$btn_objects <- renderUI({
       req(btn_objects)
 
-      lapply(seq_along(btn_objects), function(i) {
-        actionButton(inputId = paste0("btn_obj_", i), label = btn_objects[i])
-      })
+      list(
+      checkboxGroupInput("objects", "Objects:",
+                         choiceNames = btn_objects,
+                         choiceValues = btn_objects,
+                         selected = 0
+      ),
+      textOutput("att_in_common")
+      )
     })
 
     output$btn_attributes <- renderUI({
       req(btn_attributes)
 
-      lapply(seq_along(btn_attributes), function(i) {
-        actionButton(inputId = paste0("btn_attr_", i), label = btn_attributes[i])
-      })
+      checkboxGroupInput("attributes", "Attributes:",
+                         choiceNames = btn_attributes,
+                         choiceValues = btn_attributes
+      )
     })
+
+    output$att_in_common <- renderText({
+
+      set_objects <- Set$new(fca$objects)
+      sapply(input$objects, function(x){
+        name <- x[1]
+        set_objects$assign(name = 1)
+        print(name)
+        result <- fca$intent(set_objects)
+        #captured_output <- capture.output(print(result))
+        #paste(captured_output)
+        print(set_objects)
+      })
+
+
+
+    })
+
+
+    # output$att_in_common <- renderText({
+    #
+    #   if (is.null(input$objects)) {
+    #     return("Select desired objects.")
+    #   }
+    #
+    #   set_objects <- Set$new(fca$objects)
+    #   cont <- 0
+    #    sapply(fca$objects, function(obj){
+    #      indices <- obj %in% input$objects
+    #      print(input$objects[3])
+    #
+    #      # sapply a todos los input_objects -> al final pongo  set_objects <- Set$new(fca$objects) ?
+    #      #if (obj %in% input$objects){
+    #        #set_objects$assign(obj = 1)
+    #        #print(obj %in% input$objects)
+    #      #}
+    #
+    #   #     cont <- cont + 1
+    #   #     if(cont == length(fca$objects)){
+    #   #       result <- fca$intent(set_objects)
+    #   #
+    #   #       cont <- 0
+    #   #     }
+    #    }
+    #   )
+    #   })
+
 
     # Evento para btn_objects
     # Se muestran los atributos en común para todos los que sean pulsados
-    observe({
-      lapply(seq_along(btn_objects), function(i) {
-        observeEvent(input[[paste0("btn_obj_", i)]], {
-          output$clicked_button <- renderText({
-            name <- btn_objects[i]
-            set_objects$assign(name = 1)
-            result <- fca$intent(set_objects)
-
-            # Captura la impresión de consola como texto
-            captured_output <- capture.output(print(result))
-            paste(captured_output)
-          })
-        })
-      })
-    })
+    # observe({
+    #   lapply(seq_along(btn_objects), function(i) {
+    #     observeEvent(input[[paste0("btn_obj_", i)]], {
+    #       output$clicked_button <- renderText({
+    #         name <- btn_objects[i]
+    #         set_objects$assign(name = 1)
+    #         result <- fca$intent(set_objects)
+    #
+    #         # Captura la impresión de consola como texto
+    #         captured_output <- capture.output(print(result))
+    #         paste(captured_output)
+    #       })
+    #     })
+    #   })
+    # })
 
 }
