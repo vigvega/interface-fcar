@@ -71,39 +71,33 @@ body <- dashboardBody(
                        "select",
                        "Select options below:",
                        list("Objects and Attributes" = "oa", "Concepts" = "c", "Implications" = "i")
-                     ),
-                     conditionalPanel(
-                       condition = "input.select == 'oa'",
-                       div(id = "panelObjectsAttributesLeft",
-                           textInput(
-                             "selectObjects",
-                             "See attributes in common for:"
-                           )
-                           )
-                     ),
-                     conditionalPanel(
-                       condition = "input.select == 'a'",
-                       div(id = "panelB",
-                           h3("Este es el Panel B"),
-                           textInput("inputB", "Input para B"))
                      )
                      )
               ),
               column(8,
-                box(widht = 12,
                   conditionalPanel(
                     condition = "input.select == 'oa'",
-                    div(id = "panelObjectsAttributesRight",
-                        column(6,
-                        uiOutput("btn_objects")
+                        box(status = "primary",
+                            solidHeader = TRUE,
+                            width = 4,
+                            title = "Intent",
+                            uiOutput("btn_objects")
                         ),
-                        column(6,
+                        box(status = "primary",
+                            solidHeader = TRUE,
+                            width = 4,
+                            title = "Extent",
                         uiOutput("btn_attributes")
                         ),
-                        verbatimTextOutput("clicked_button")
+                        box(status = "primary",
+                            solidHeader = TRUE,
+                            width = 4,
+                            title = "Closure",
+                            uiOutput("btn_attributes2")
+                        )
                     )
-                  )
-                )
+
+
               )
             )
     )# Fin get started
