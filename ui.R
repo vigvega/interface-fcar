@@ -75,11 +75,9 @@ body <- dashboardBody(
                      conditionalPanel(
                        condition = "input.select == 'oa'",
                        div(id = "panelObjectsAttributesLeft",
-                           selectInput(
+                           textInput(
                              "selectObjects",
-                             "See attributes in common for:",
-                             choices = NULL,
-                             multiple = TRUE
+                             "See attributes in common for:"
                            )
                            )
                      ),
