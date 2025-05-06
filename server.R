@@ -21,7 +21,6 @@ server <- function(input, output, session) {
     # Para cargar dataset
     dataset <- import_file_server("file_dataset")
 
-
   # Generar botones objetos y atributos
     btn_objects <- fca$objects # esto seria un user input
     btn_attributes <- fca$attributes
@@ -29,37 +28,28 @@ server <- function(input, output, session) {
     output$btn_objects <- renderUI({
       req(btn_objects)
 
-      list(
       checkboxGroupInput("objects", "",
                          choiceNames = btn_objects,
                          choiceValues = btn_objects,
                          selected = 0
-      ),
-      verbatimTextOutput("intent")
       )
     })
 
     output$btn_attributes <- renderUI({
       req(btn_attributes)
 
-      list(
       checkboxGroupInput("attributes", "",
                          choiceNames = btn_attributes,
                          choiceValues = btn_attributes
-      ),
-      verbatimTextOutput("extent")
       )
     })
 
     output$btn_attributes2 <- renderUI({
       req(btn_attributes)
 
-      list(
-        checkboxGroupInput("attributes2", "",
+      checkboxGroupInput("attributes2", "",
                            choiceNames = btn_attributes,
                            choiceValues = btn_attributes
-        ),
-        verbatimTextOutput("closure")
       )
     })
 

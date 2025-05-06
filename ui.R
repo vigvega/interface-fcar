@@ -65,7 +65,7 @@ body <- dashboardBody(
               )
             ),
             fluidRow(class = "box1",
-              column(4,
+              column(3,
                      box(width = 12,
                      selectInput(
                        "select",
@@ -74,30 +74,48 @@ body <- dashboardBody(
                      )
                      )
               ),
-              column(8,
+              column(9,
                   conditionalPanel(
                     condition = "input.select == 'oa'",
-                        box(status = "primary",
+                        box(status = "success",
                             solidHeader = TRUE,
                             width = 4,
                             title = "Intent",
-                            uiOutput("btn_objects")
+                            div(style = "height: 35vh; overflow-y: auto;",
+                            uiOutput("btn_objects"))
                         ),
-                        box(status = "primary",
+                        box(status = "warning",
                             solidHeader = TRUE,
                             width = 4,
                             title = "Extent",
-                        uiOutput("btn_attributes")
+                            div(style = "height: 35vh; overflow-y: auto;",
+                        uiOutput("btn_attributes"))
                         ),
                         box(status = "primary",
                             solidHeader = TRUE,
                             width = 4,
                             title = "Closure",
-                            uiOutput("btn_attributes2")
-                        )
+                            div(style = "height: 35vh; overflow-y: auto;",
+                            uiOutput("btn_attributes2"))
+                        ),
+                    column(12,
+                    fluidRow(
+                      box(status="success",
+                          width = 12,
+                          verbatimTextOutput("intent"))
+                    ),
+                    fluidRow(
+                      box(status="warning",
+                          width = 12,
+                          verbatimTextOutput("extent"))
+                    ),
+                    fluidRow(
+                      box(status="primary",
+                          width = 12,
+                          verbatimTextOutput("closure"))
                     )
-
-
+                    )
+                    )
               )
             )
     )# Fin get started
