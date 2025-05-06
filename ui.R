@@ -55,6 +55,7 @@ body <- dashboardBody(
                 width = 12,
                 collapsible = TRUE,
                 collapsed = TRUE,
+                status = "info",
                 title = "Upload data",
                 column(4,
                 fileInput("file", "Data (allowed formats: .csv, .txt)", buttonLabel = "Upload...", accept = c(".csv")),
@@ -76,56 +77,68 @@ body <- dashboardBody(
             fluidRow(class = "box1",
               column(3,
                      box(width = 12,
+                         status = "info",
+                         title = "Select options below",
                      selectInput(
                        "select",
-                       "Select options below:",
-                       list("Objects and Attributes" = "oa", "Concepts" = "c", "Implications" = "i")
-                     ),
-                     div(style = "height: 100%; overflow-y: auto;",
-                     verbatimTextOutput("dataSummary")
+                       "",
+                       list("Basic operations" = "oa", "Concepts" = "c", "Implications" = "i")
                      )
                      )
               ),
               column(9,
                   conditionalPanel(
                     condition = "input.select == 'oa'",
-                        box(status = "success",
-                            solidHeader = TRUE,
-                            width = 4,
-                            title = "Intent",
-                            div(style = "height: 35vh; overflow-y: auto;",
-                            uiOutput("btn_objects"))
+                        box(width = 8,
+                            status = "info",
+                            title = "Formal Context",
+                            div(style = "height: 50vh; overflow-y: auto; whitespace:pre-wrap; ",
+                            verbatimTextOutput("formalContext"),
+                            actionButton("createLatex", "Create table in LaTeX format", class = "btn btn-lg btn-block"),
+                            downloadButton("downloadRds", "Download", class = "btn btn-lg btn-block")
+
+                            )
                         ),
-                        box(status = "warning",
-                            solidHeader = TRUE,
-                            width = 4,
-                            title = "Extent",
-                            div(style = "height: 35vh; overflow-y: auto;",
-                        uiOutput("btn_attributes"))
-                        ),
-                        box(status = "primary",
-                            solidHeader = TRUE,
-                            width = 4,
-                            title = "Closure",
-                            div(style = "height: 35vh; overflow-y: auto;",
-                            uiOutput("btn_attributes2"))
+                        box(width = 4,
+                            status = "info",
+                            title = "Operations",
+                            div(style = "height: 50vh; overflow-y: auto;",
+                            selectInput(
+                              "selectOperation",
+                              "",
+                              list("Extent" = "ex", "Intent" = "in", "Closure" = "cl")
+                                ),
+                            conditionalPanel(
+                              condition = "input.selectOperation == 'in'",
+                              uiOutput("btn_objects"),
+                            ),
+                            conditionalPanel(
+                              condition = "input.selectOperation == 'ex'",
+                              uiOutput("btn_attributes"),
+                            ),
+                            conditionalPanel(
+                              condition = "input.selectOperation == 'cl'",
+                              uiOutput("btn_attributes2"),
+                            )
+                            )
                         ),
                     column(12,
                     fluidRow(
-                      box(status="success",
+                      box(status="info",
                           width = 12,
-                          verbatimTextOutput("intent"))
-                    ),
-                    fluidRow(
-                      box(status="warning",
-                          width = 12,
-                          verbatimTextOutput("extent"))
-                    ),
-                    fluidRow(
-                      box(status="primary",
-                          width = 12,
-                          verbatimTextOutput("closure"))
-                    )
+                          conditionalPanel(
+                            condition = "input.selectOperation == 'in'",
+                            verbatimTextOutput("intent")
+                          ),
+                          conditionalPanel(
+                            condition = "input.selectOperation == 'ex'",
+                            verbatimTextOutput("extent")
+                          ),
+                          conditionalPanel(
+                            condition = "input.selectOperation == 'cl'",
+                            verbatimTextOutput("closure")
+                          ))
+                      )
                     )
                     )
               )

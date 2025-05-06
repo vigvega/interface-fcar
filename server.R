@@ -14,6 +14,7 @@ server <- function(input, output, session) {
     updateTabItems(session, "tabs", "get_started")
   })
 
+  # Cargo el dataset
   data <- reactive({
 
     # Primero miro si han seleccionado algun dataset de los proporcionados
@@ -46,21 +47,25 @@ server <- function(input, output, session) {
     }
   })
 
+  # Creo contexto formal
   fca <- reactive({
     FormalContext$new(data())
   })
 
     # Visualizo datos
   output$contents <- renderDT({
-    head(data(), 5)
+    head(data(), 4)
   })
 
+  # Visualizo contexto formal
+  output$formalContext <- renderPrint({
+    paste(capture.output(print(fca())))
+    })
 
-
-  # # Generar botones objetos y atributos
-     btn_objects <- reactive ({ fca()$objects }) # esto seria un user input
+   # Generar botones objetos y atributos
+     btn_objects <- reactive ({ fca()$objects })
      btn_attributes <- reactive({ fca()$attributes })
-  #
+
      output$btn_objects <- renderUI({
        req(btn_objects())
 
@@ -106,7 +111,7 @@ server <- function(input, output, session) {
     output$extent <- renderText({
 
       if(is.null(input$attributes)){
-        return("Choose attributes to see objects that has them")
+        return("Choose attributes to see objects that have them")
       }
 
       set_attributes <- Set$new(fca()$attributes)
@@ -130,5 +135,40 @@ server <- function(input, output, session) {
       result <- fca()$closure(set_attributes)
       paste(capture.output(print(result)))
     })
+
+
+    # Modal para ver la tabla latex
+    observeEvent(input$createLatex, {
+      showModal(modalDialog(
+        title = "Latex table",
+        p("Copy the following text and paste it in your .tex file"),
+        verbatimTextOutput("latexTable"),
+        footer = tagList(
+          actionButton("closeModal", "Close", class = "btn-secondary")),
+        size = "m",
+        easyClose = TRUE
+      ))
+    })
+
+    output$latexTable <- renderText({
+      paste(capture.output(print(fca()$to_latex())), collapse = "\n")
+    })
+
+    # Close modal button
+    observeEvent(input$closeModal, {
+      removeModal()
+    })
+
+    output$downloadRds <- downloadHandler(
+      filename = function() {
+        "fc.rds"
+      },
+      content = function(file) {
+        # Guardo en local
+        fca()$save(filename = "./fc.rds")
+        # Luego lo copio para descarga
+        file.copy("./fc.rds", file)
+      }
+    )
 
 }
