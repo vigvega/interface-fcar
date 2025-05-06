@@ -8,9 +8,6 @@ library(datamods)
 devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
 # editbl
 
-games <- read.csv("~/Desktop/TFG/games.csv", row.names=1)
-fca <- FormalContext$new(games)
-
 header <- dashboardHeader(title = "FACR PACKAGE")
 
 sidebar <- dashboardSidebar(
@@ -58,9 +55,21 @@ body <- dashboardBody(
                 width = 12,
                 collapsible = TRUE,
                 collapsed = TRUE,
-                status = "info",
                 title = "Upload data",
-                import_file_ui("file_dataset"),
+                column(4,
+                fileInput("file", "Data (allowed formats: .csv, .txt)", buttonLabel = "Upload...", accept = c(".csv")),
+                textInput("delim", "Delimiter (optional)", ""),
+                selectInput(
+                  "selectDataset",
+                  "Or... use some of our preloaded data!",
+                  list("--Select--" = "", "Videogames" = "v", "Ganter" = "g", "Planets" = "p")
+                ),
+                ),
+                column(8,
+                       div(style = "height: 100%; overflow-y: auto;",
+                       DTOutput("contents"))
+                )
+
               )
               )
             ),
@@ -71,6 +80,9 @@ body <- dashboardBody(
                        "select",
                        "Select options below:",
                        list("Objects and Attributes" = "oa", "Concepts" = "c", "Implications" = "i")
+                     ),
+                     div(style = "height: 100%; overflow-y: auto;",
+                     verbatimTextOutput("dataSummary")
                      )
                      )
               ),

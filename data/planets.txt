@@ -1,0 +1,10 @@
+small	medium	large	near	far	moon	no_moon  
+Mercury	1	0	0	1	0	0	1     
+Venus	1	0	0	1	0	0	1     
+Earth	1	0	0	1	0	1	0     
+Mars	1	0	0	1	0	1	0     
+Jupiter	0	0	1	0	1	1	0     
+Saturn	0	0	1	0	1	1	0     
+Uranus	0	1	0	0	1	1	0     
+Neptune	0	1	0	0	1	1	0     
+Pluto	1	0	0	0	1	1	0  
