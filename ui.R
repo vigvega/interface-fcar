@@ -5,10 +5,11 @@ library(DT)
 library(igraph)
 library(visNetwork)
 library(datamods)
-devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
+library(fcaR)
+#devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
 # editbl
 
-header <- dashboardHeader(title = "FACR PACKAGE")
+header <- dashboardHeader(title = "FCAR PACKAGE")
 
 sidebar <- dashboardSidebar(
   collapsed = TRUE, # la barra lateral la oculto por defecto
@@ -87,6 +88,7 @@ body <- dashboardBody(
                      )
               ),
               column(9,
+                     # Panel de operaciones básicas
                   conditionalPanel(
                     condition = "input.select == 'oa'",
                         box(width = 8,
@@ -140,7 +142,33 @@ body <- dashboardBody(
                           ))
                       )
                     )
+                    ), # Fin condicional para operaciones básicas
+                  # Panel de implicaciones
+                  conditionalPanel(
+                    condition = "input.select == 'i'",
+                    box(width = 8,
+                        status = "info",
+                        title = "Implications",
+                        div(style = "height: 50vh; overflow-y: auto; whitespace:pre-wrap; ",
+                            selectInput("selectRulesImplications",
+                                        "Choose rules to apply:",
+                                        list("Composition" = "composition", "Generalization" = "generalization", "Reduction" = "reduction", "Simplification" = "simplification"), multiple = TRUE),
+                            actionButton("btnApplyRules", "Apply"),
+                            actionButton("btnClearRules", "Clear"),
+                            verbatimTextOutput("fcImplications"),
+                            br(),
+                            actionButton("createLatexImplications", "Create table in LaTeX format", class = "btn btn-lg btn-block")
+                        )
+                    ),
+                    box(width = 4,
+                        status = "info",
+                        title = "Other operations",
+                        div(style = "height: 50vh; overflow-y: auto; whitespace:pre-wrap; ",
+                            selectInput("selectRulesFromImplications", "Choose rules to check if they hold in the formal context:", choices = NULL, multiple = TRUE),
+                            verbatimTextOutput("holdsIn")
+                            )
                     )
+                  ) # Fin condicional para implicaciones
               )
             )
     )# Fin get started

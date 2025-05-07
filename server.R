@@ -5,7 +5,8 @@ library(DT)
 library(igraph)
 library(visNetwork)
 library(datamods)
-devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
+library(fcaR)
+#devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
 
 server <- function(input, output, session) {
 
@@ -60,6 +61,28 @@ server <- function(input, output, session) {
   # Visualizo contexto formal
   output$formalContext <- renderPrint({
     paste(capture.output(print(fca())))
+    })
+
+  # Visualizo implicaciones
+  output$fcImplications <- renderText({
+    fca()$find_implications()
+    paste(capture.output(print(fca()$implications)), collapse = "\n")
+  })
+
+  # Aplicar reglas
+  observeEvent(input$btnApplyRules, {
+    fca()$implications$apply_rules(rules = c(input$selectRulesImplications))
+    output$fcImplications <- renderText({
+      paste(capture.output(print(fca()$implications)), collapse = "\n")
+    })
+  })
+
+  # Limpiar y ver implicaciones sin reglas
+  observeEvent(input$btnClearRules, {
+    fca()$find_implications()
+    output$fcImplications <- renderText({
+      paste(capture.output(print(fca()$implications)), collapse = "\n")
+    })
     })
 
    # Generar botones objetos y atributos
@@ -137,14 +160,14 @@ server <- function(input, output, session) {
     })
 
 
-    # Modal para ver la tabla latex
+    # Modal para ver la tabla latex del contexto formla
     observeEvent(input$createLatex, {
       showModal(modalDialog(
         title = "Latex table",
         p("Copy the following text and paste it in your .tex file"),
         verbatimTextOutput("latexTable"),
         footer = tagList(
-          actionButton("closeModal", "Close", class = "btn-secondary")),
+          actionButton("closeModalFC", "Close", class = "btn-secondary")),
         size = "m",
         easyClose = TRUE
       ))
@@ -155,10 +178,11 @@ server <- function(input, output, session) {
     })
 
     # Close modal button
-    observeEvent(input$closeModal, {
+    observeEvent(input$closeModalFC, {
       removeModal()
     })
 
+    # Descarga
     output$downloadRds <- downloadHandler(
       filename = function() {
         "fc.rds"
@@ -170,5 +194,57 @@ server <- function(input, output, session) {
         file.copy("./fc.rds", file)
       }
     )
+
+    # Modal para ver la tabla latex de implicaciones
+    observeEvent(input$createLatexImplications, {
+      showModal(modalDialog(
+        title = "Latex table for implications",
+        p("Copy the following text and paste it in your .tex file"),
+        verbatimTextOutput("latexTableImplications"),
+        footer = tagList(
+          actionButton("closeModalImplications", "Close", class = "btn-secondary")),
+        size = "m",
+        easyClose = TRUE
+      ))
+    })
+
+    output$latexTableImplications <- renderText({
+      paste(capture.output(print(fca()$implications$to_latex())), collapse = "\n")
+    })
+
+    # Close modal button
+    observeEvent(input$closeModalImplications, {
+      removeModal()
+    })
+
+    # Actualizo el select con el numero de reglas generadas
+    observe({
+      fca()$find_implications()
+      num <- fca()$implications$cardinality()
+
+      options <- paste("Rule", 1:num)
+      names(options) <- paste("Rule", 1:num)
+
+      updateSelectInput(
+        session,
+        "selectRulesFromImplications",
+        choices = options
+      )
+
+      # Aplico el operador holds_in
+      output$holdsIn <- renderText({
+
+        if(is.null(input$selectRulesFromImplications)){
+          return("Select rules")
+        }
+
+        indexes <- as.numeric(gsub("\\D", "", input$selectRulesFromImplications))
+        imp <- fca()$implications[indexes]
+        holds <- imp %holds_in% fca()
+
+        paste(holds)
+      })
+
+    })
 
 }
