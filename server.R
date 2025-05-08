@@ -6,14 +6,31 @@ library(igraph)
 library(visNetwork)
 library(datamods)
 library(fcaR)
+library(shinyjs)
 #devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
+source("uiHome.R")
+source("uiUploadData.R")
+source("uiBasicOperations.R")
 
 server <- function(input, output, session) {
 
-  # Evento para ir a get started
+  # Evento para ir al primer paso
   observeEvent(input$btn_start, {
-    updateTabItems(session, "tabs", "get_started")
+    updateTabItems(session, "tabs", "upload_data")
   })
+
+  observeEvent(input$btnGoBasicOperations, {
+    updateTabItems(session, "tabs", "basic_operations")
+  })
+
+  observeEvent(input$btnGoUploadData, {
+    updateTabItems(session, "tabs", "upload_data")
+  })
+
+  observeEvent(input$btnGoImplications, {
+    updateTabItems(session, "tabs", "ui_implications")
+  })
+
 
   # Cargo el dataset
   data <- reactive({
@@ -21,42 +38,82 @@ server <- function(input, output, session) {
     # Primero miro si han seleccionado algun dataset de los proporcionados
     if(input$selectDataset == 'v'){
       req(input$selectDataset)
+      enable("btnGoBasicOperations")
       read.csv("data/games.csv", row.names=1)
     }
     else if(input$selectDataset == 'g'){
       req(input$selectDataset)
+      enable("btnGoBasicOperations")
       read.csv("data/ganter.csv", sep=";", row.names=1)
     }
     else if(input$selectDataset == 'p'){
       req(input$selectDataset)
-      read.delim("data/planets.txt", row.names = 1)
+      enable("btnGoBasicOperations")
+        read.delim("data/planets.txt", row.names = 1)
     }
     else{ # sino, miro el archivo que se ha cargado
       req(input$file)
+      enable("btnGoBasicOperations")
       ext <- tools::file_ext(input$file$datapath)
       if (ext == "csv"){
         if(input$delim == ""){
-          read.csv(input$file$datapath, row.names = 1)
+          read.csv(input$file$datapath, row.names = 1, skip = input$skip)
         }
         else{
-          read.csv(input$file$datapath, row.names = 1, sep = input$delim)
+          read.csv(input$file$datapath, row.names = 1, sep = input$delim, skip = input$skip)
         }
       }
       else if(ext == "txt"){
-          read.delim(input$file$datapath, row.names = 1)
+          read.delim(input$file$datapath, row.names = 1, skip = input$skip)
       }
     }
   })
 
-  # Creo contexto formal
-  fca <- reactive({
-    FormalContext$new(data())
+
+  # Compruebo si hay datos cargados y los visualizo
+  output$contents <- renderUI({
+    if(!(is.null(input$fileRds))){
+      enable("btnGoBasicOperations")
+      tags$div(
+        style = "text-align: center;",
+        tags$br(),
+        tags$h4("Formal Context successfully imported!", class = "roboto-mono"),
+        tags$img(
+          src = "success2.gif",
+          width = "400vh",
+          height = "auto"
+        ),
+        tags$h5("Nothing to show here. Go to next page", class = "roboto-mono")
+      )
+    }
+    else if (is.null(input$file)  && input$selectDataset == "") {
+      tags$div(
+        style = "text-align: center;",
+        tags$br(),
+        tags$img(
+          src = "oops.png",
+          width = "350vh",
+          height = "auto"
+        )      )
+    } else {
+      req(data())
+      datatable(head(data(), 10), options = list(scrollX = TRUE))
+    }
   })
 
-    # Visualizo datos
-  output$contents <- renderDT({
-    head(data(), 4)
+
+  # Creo contexto formal
+  fca <- reactive({
+    if (is.null(input$fileRds)){
+      FormalContext$new(data())
+    }
+    else{
+      req(input$fileRds)
+      FormalContext$new(input$fileRds$datapath)
+      # cambiar imagen a una que ponga algo del estilo: nothing to show here
+    }
   })
+
 
   # Visualizo contexto formal
   output$formalContext <- renderPrint({
@@ -246,5 +303,8 @@ server <- function(input, output, session) {
       })
 
     })
+
+    # fcText
+    output$fcText <- renderText({ "fc <- FormalContext$new(dataset) \nprint(fc)" })
 
 }

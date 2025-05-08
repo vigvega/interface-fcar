@@ -10,8 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(fcaR)
-games <- read.csv("~/Desktop/TFG/games.csv", row.names=1)
-fca <- FormalContext$new(games)
+#games <- read.csv("~/Desktop/TFG/games.csv", row.names=1)
+fca <- FormalContext$new("/home/vi/Desktop/TFG/interface-fcaR-new/data/planets.txt")
 ```
 
 ```{r}
