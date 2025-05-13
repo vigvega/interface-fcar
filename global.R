@@ -1,0 +1,105 @@
+library(httr)
+library(jsonlite)
+
+# Recupero los nombres de los archivos disponibles
+returnNames <- function(){
+  url <- "https://api.github.com/repos/fcatools/contexts/contents/contexts"
+  response <- GET(url)
+  if (status_code(response) == 200) {
+    content_text <- content(response, as = "text", encoding = "UTF-8")
+    content_json <- fromJSON(content_text)
+    # Me quedo solo con los que tienen la extension .cxt
+    files <- content_json$name[grepl("\\.cxt$", content_json$name)]
+    return(files)
+  }
+  else{
+    return("Error. Connection failed.")
+  }
+}
+
+# Devuelve lista con las opciones disponibles
+selectOptions <- function(){
+  files <- returnNames()
+  titles <- unlist(lapply(content_json$name, function(x) { yaml::read_yaml("https://fcarepository.org/contexts.yaml")[[x]]$title }))
+  #languages <- unlist(lapply(content_json$name, function(x) { yaml::read_yaml("https://fcarepository.org/contexts.yaml")[[x]]$language }))
+  return(list(files, titles))
+  }
+
+# Devuelve el contexto seleccionado por el usuario
+returnFCFromRepo <- function(option){
+  URL <- glue::glue("https://github.com/fcatools/contexts/raw/main/contexts/{option}")
+
+  file <- tempfile(fileext = ".cxt")
+
+  err <- try(
+    download.file(URL,
+                  destfile = file,
+                  quiet = TRUE
+    )
+  )
+
+  print(option)
+
+  if (inherits(err, "try-error")) {
+    stop("Download error.")
+  } else {
+    print("Found context.")
+    print(option)
+
+    meta <- yaml::read_yaml("https://fcarepository.org/contexts.yaml")[[option]]
+
+    #print(meta)
+    if (!is.null(meta)) {
+      description <- glue::glue("- {cli::style_underline('Title')}: {meta$title}\n- {cli::style_underline('Description')}: {stringr::str_to_sentence(meta$description)}\n- {cli::style_underline('Source')}: {meta$source}\n\n",
+                                .trim = FALSE
+      ) |>
+        cat()
+    } else {
+      description <- ""
+    }
+  }
+
+  print(FormalContext$new(file)) # Esto devuelve el contexto requerido, y en description está la descripción.
+
+  #unlink(file) # Esto borra el archivo temporal que hemos creado
+}
+
+parse_latex_table <- function(latex_text) {
+  # Extract only lines with data (ignore caption, label, etc.)
+  lines <- unlist(strsplit(latex_text, "\n"))
+  table_lines <- lines[grepl("&", lines) & grepl("\\\\", lines)]
+
+  # Remove LaTeX syntax
+  table_lines <- gsub("\\\\(hline|end\\{tabular\\}|end\\{table\\})", "", table_lines)
+  table_lines <- trimws(gsub("\\$|\\\\times", "×", table_lines))
+
+  # Determinar el número máximo de columnas
+  num_columns <- max(sapply(table_lines, function(line) length(unlist(strsplit(line, "&")))))
+
+  # Split by &
+  table_matrix <- do.call(rbind, lapply(table_lines, function(line) {
+    cells <- unlist(strsplit(line, "&"))
+    cells <- gsub("\\\\\\\\", "", cells)  # remove \\ at the end
+    cells <- trimws(cells)
+    # Rellenar con celdas vacías si faltan columnas
+    length(cells) <- num_columns
+    cells[is.na(cells)] <- ""
+    return(cells)
+  }))
+
+  # Remove "×" from the start and end of each row
+  table_matrix <- apply(table_matrix, 2, function(col) {
+    gsub("^×|×$", "", col)
+  })
+
+  # First row is header
+  colnames(table_matrix) <- c("-", table_matrix[1, -1])
+  table_matrix <- table_matrix[-1, , drop = FALSE]
+
+  # Convert to data.frame
+  df <- as.data.frame(table_matrix, stringsAsFactors = FALSE)
+  rownames(df) <- NULL
+  return(df)
+}
+
+

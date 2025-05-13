@@ -1,35 +1,50 @@
+library(shinyjs)
 uiUploadData <- tabItem(tabName = "upload_data",
                         useShinyjs(),
+                        fluidRow(
                         box(
                           width = 12,
-                          #collapsible = TRUE,
-                          #collapsed = TRUE,
                           status = "info",
                           title = "Upload data",
-                          div(style = "height: 70vh; overflow-y: auto;",
-                              column(5,
-                                     fileInput("file", "1. Select dataset (allowed formats: .csv, .txt)", buttonLabel = "Upload...", accept = c(".csv")),
-                                     selectInput("delim", "Delimiter (optional)", list("--Select--" = "", "Comma" = ",", "Semicolon" = ";", "Whitespace" = " ", "Tab" = "\t")),
-                                     numericInput("skip", "Skip rows",value = 0, min = 0, max = 100000),
-                                     fileInput("fileRds", "2. Select .rds file", buttonLabel = "Upload...", accept = c(".rds")),
-                                     selectInput(
-                                       "selectDataset",
-                                       "3. Or... use some of our preloaded data!",
-                                       list("--Select--" = "", "Videogames" = "v", "Ganter" = "g", "Planets" = "p"),
-                                       #selected = "v"
-                                     )
+                          div(style = "height: 75vh; overflow: auto",
+                              fluidRow(
+                                column(6,
+                                       fileInput("file", "Upload your .csv, .rds or .cxt file", buttonLabel = "Upload...", accept = c(".csv", ".rds", ".cxt")),
+                                ),
+                                column(6,
+                                       fluidRow(
+                                         column(8,
+                                                selectInput(
+                                                  "selectDataset",
+                                                  "Or... connect to fcarepository.org!",
+                                                  #list(choices = options)
+                                                  list("--Select--" = "")
+                                                )
+                                         ),
+                                         column(4,
+                                                br(),
+                                                input_task_button("connectRepo", "Find datasets")
+                                         )
+                                       ),
+                                       textOutput("connectionFailed")
+                                ),
                               ),
-                              column(7,
-                                     div(style = "height: 100%; overflow-y: auto;",
-                                         uiOutput("contents")
-                                         #DTOutput("contents")
-                                     )
+                              fluidRow(
+                                hr(),
+                                div(style="display: flex; justify-content: center; height: 60vh; overflow: auto;",
+                                    div(style = "max-width: 100%; max-height: 100%; overflow: auto; display: inline-block;",
+                                        uiOutput("contents")
+                                    )
+                                )
                               )
                           )
+                        )
                         ),
-                        column(12,
-                               div(style = "text-align: right;",
-                                   actionButton("btnGoBasicOperations", "", icon = icon("arrow-right"), disabled = TRUE)
-                               )
+                        fluidRow(
+                          column(12,
+                                 div(style = "text-align: right;",
+                                     actionButton("btnGoBasicOperations", "", icon = icon("arrow-right"), disabled = TRUE)
+                                 )
+                          )
                         )
 )
