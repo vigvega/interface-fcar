@@ -7,9 +7,9 @@ library(visNetwork)
 library(datamods)
 library(shinyalert)
 library(shinyWidgets)
-#library(fcaR)
+library(fcaR)
 library(shinyjs)
-devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
+#devtools::load_all("/home/vi/Desktop/TFG/fcaR-master")
 
 source("uiHome.R")
 source("uiUploadData.R")
@@ -41,29 +41,29 @@ server <- function(input, output, session) {
   #######################
 
   fca <- reactive({
-     if(!(is.null(input$file))){
-       req(input$file)
-       ext <- tolower(tools::file_ext(input$file$name))
-       if(ext != "csv" && ext != "rds" && ext != "cxt"){
-         shinyalert(
-           title = "Warning",
-           text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
-           type = "warning"
-         )
+      if(!(is.null(input$file))){
+        req(input$file)
+        ext <- tolower(tools::file_ext(input$file$name))
+        if(ext != "csv" && ext != "rds" && ext != "cxt"){
+          shinyalert(
+            title = "Warning",
+            text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
+            type = "warning"
+          )
 
-         FormalContext$new(planets) # para que no explote simplemente
+          FormalContext$new(planets) # para que no explote simplemente
 
-       }
-       else{
-         FormalContext$new(input$file$datapath)
-     }
-     }
-      else if(input$selectDataset != ""){
-        returnFCFromRepo(input$selectDataset)
+        }
+        else{
+          FormalContext$new(input$file$datapath)
       }
-       else{
-         FormalContext$new(planets) # para que no explote simplemente
+      }
+       else if(input$selectDataset != ""){
+         returnFCFromRepo(input$selectDataset)
        }
+        else{
+          FormalContext$new(planets) # para que no explote simplemente
+        }
   })
 
   # Establecer conexion con el repo
@@ -263,28 +263,114 @@ server <- function(input, output, session) {
          }
        )
 
-  #
-  # # Visualizo implicaciones
-  # output$fcImplications <- renderText({
-  #   fca()$find_implications()
-  #   paste(capture.output(print(fca()$implications)), collapse = "\n")
-  # })
-  #
-  # # Aplicar reglas
-  # observeEvent(input$btnApplyRules, {
-  #   fca()$implications$apply_rules(rules = c(input$selectRulesImplications))
-  #   output$fcImplications <- renderText({
-  #     paste(capture.output(print(fca()$implications)), collapse = "\n")
-  #   })
-  # })
-  #
-  # # Limpiar y ver implicaciones sin reglas
-  # observeEvent(input$btnClearRules, {
-  #   fca()$find_implications()
-  #   output$fcImplications <- renderText({
-  #     paste(capture.output(print(fca()$implications)), collapse = "\n")
-  #   })
-  #   })
+       ########################
+       ### TAB IMPLICATIONS ###
+       ########################
+
+  # Aviso de que se van a calcular las implicaciones
+       observeEvent(input$tabs, {
+         if (input$tabs == "ui_implications") {
+           showModal(modalDialog(
+             title = "Warning!",
+             "Do you want to compute the set of implications? This may take a while.",
+             easyClose = TRUE,
+             footer = tagList(
+               input_task_button("getImplications", "Compute set of implications"),
+               actionButton("goBack", "Go back")
+             )
+           ))
+           reactiveVal(FALSE)
+         }
+       })
+
+       # Calculo y muestro implicaciones
+       observeEvent(input$getImplications, {
+         Sys.sleep(3)  # Simular una tarea lenta
+         fca()$find_implications()
+         output$fcImplications <- renderText({
+           paste(capture.output(print(fca()$implications)), collapse = "\n")
+         })
+         removeModal()
+       })
+
+       # O vuelvo atras
+       observeEvent(input$goBack, {
+         updateTabItems(session, "tabs", "basic_operations")
+         removeModal()
+       })
+
+
+      # Filtros
+      observe({
+        updateMultiInput(
+          session = session,
+          inputId = "selectLHS",
+          choices = fca()$attributes
+        )
+      })
+
+      observe({
+        updateMultiInput(
+          session = session,
+          inputId = "selectRHS",
+          choices = fca()$attributes
+        )
+      })
+
+
+      # Aplicar filtros
+      observeEvent(input$btnApplyFilters, {
+        filteredImplications <- fca()$implications$filter(lhs = c(input$selectLHS), rhs=c(input$selectRHS))
+        output$fcImplications <- renderText({
+          paste(capture.output(print(filteredImplications)), collapse = "\n")
+        })
+      })
+
+
+      # Limpiar y ver implicaciones sin filtros
+      observeEvent(input$btnClearFilters, {
+        Sys.sleep(3)
+        fca()$find_implications()
+        output$fcImplications <- renderText({
+          paste(capture.output(print(fca()$implications)), collapse = "\n")
+        })
+        })
+
+      # Simplify
+      observeEvent(input$simplifyImplications, {
+        Sys.sleep(3)
+        fca()$implications$apply_rules(rules = c("simplify"))
+        output$fcImplications <- renderText({
+          paste(capture.output(print(fca()$implications)), collapse = "\n")
+        })
+      })
+
+
+      # Closure
+
+      observe({
+        updateMultiInput(
+          session = session,
+          inputId = "selectClosure",
+          choices = fca()$attributes
+        )
+      })
+
+      output$implicationsClosure <- renderText({
+
+        if(is.null(input$selectClosure)){
+          return("Nothing selected")
+        }
+
+        set_attributes <- Set$new(fca()$attributes)
+        sapply(input$selectClosure, function(x){
+          do.call(set_attributes$assign, setNames(list(1), x))
+        })
+        result <- fca()$implications$closure(set_attributes)
+        paste(capture.output(print(result)))
+      })
+
+
   #
   #
   #
@@ -332,35 +418,6 @@ server <- function(input, output, session) {
   #     removeModal()
   #   })
   #
-  #   # Actualizo el select con el numero de reglas generadas
-  #   observe({
-  #     fca()$find_implications()
-  #     num <- fca()$implications$cardinality()
-  #
-  #     options <- paste("Rule", 1:num)
-  #     names(options) <- paste("Rule", 1:num)
-  #
-  #     updateSelectInput(
-  #       session,
-  #       "selectRulesFromImplications",
-  #       choices = options
-  #     )
-  #
-  #     # Aplico el operador holds_in
-  #     output$holdsIn <- renderText({
-  #
-  #       if(is.null(input$selectRulesFromImplications)){
-  #         return("Select rules")
-  #       }
-  #
-  #       indexes <- as.numeric(gsub("\\D", "", input$selectRulesFromImplications))
-  #       imp <- fca()$implications[indexes]
-  #       holds <- imp %holds_in% fca()
-  #
-  #       paste(holds)
-  #     })
-  #
-  #   })
   #
   #   # Plot
   #   output$plot <- renderVisNetwork({
