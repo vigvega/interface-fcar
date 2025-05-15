@@ -102,4 +102,41 @@ parse_latex_table <- function(latex_text) {
   return(df)
 }
 
+parse_latex_concepts <- function(latex_text) {
+  # Dividir en líneas
+  lines <- unlist(strsplit(latex_text, "\n"))
+
+  # Filtrar las líneas que contienen los conceptos
+  concept_lines <- grep("^\\d+:.*\\\\\\\\$", lines, value = TRUE)
+
+  # Limpiar y extraer las partes entre llaves con regex
+  extract_concepts <- function(line) {
+    # Eliminar código LaTeX innecesario
+    line <- gsub("\\\\mathrm\\{([^}]*)\\}", "\\1", line)
+    line <- gsub("\\\\ensuremath\\{?\\\\varnothing\\}?", "{}", line)
+    line <- gsub("\\\\left|\\\\right|\\\\\\(|\\\\\\)|\\$|\\\\,", "", line)
+    line <- gsub("\\\\_", "_", line)
+
+    # Extraer las partes dentro de los conjuntos con regex
+    matches <- regmatches(line, gregexpr("\\{[^}]*\\}", line))[[1]]
+
+    # Casos: ambos conjuntos (lhs y rhs) o solo rhs (cuando lhs está vacío)
+    lhs <- if (length(matches) >= 1) gsub("^\\{|\\}$", "", matches[1]) else ""
+    rhs <- if (length(matches) >= 2) gsub("^\\{|\\}$", "", matches[2]) else ""
+
+    return(c(lhs = lhs, rhs = rhs))
+  }
+
+  # Aplicar extracción
+  concept_pairs <- t(sapply(concept_lines, extract_concepts))
+
+  # Convertir a data.frame
+  df <- as.data.frame(concept_pairs, stringsAsFactors = FALSE)
+
+  df$lhs <- gsub("\\\\$", "", df$lhs)
+  df$rhs <- gsub("\\\\$", "", df$rhs)
+  return(df)
+}
+
+
 

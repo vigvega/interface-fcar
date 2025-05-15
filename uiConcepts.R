@@ -6,7 +6,7 @@ uiConcepts <- tabItem(tabName = "ui_concepts",
                                    solidHeader = TRUE,
                                    title = "Concepts",
                                    div(style = "height: 70vh; overflow-y: auto; whitespace:pre-wrap; ",
-                                       verbatimTextOutput("fcConcepts"),
+                                       tableOutput("fcConcepts"),
                                        actionButton("createLatexConcepts", "Create table in LaTeX format", class = "btn btn-lg btn-block")
                                    )
                                )

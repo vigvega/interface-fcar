@@ -5,7 +5,7 @@ account: vigvega
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14704117
-bundleId: 10277792
+bundleId: 10288935
 url: https://vigvega.shinyapps.io/interface-fcaR/
 version: 1
 asMultiple: FALSE

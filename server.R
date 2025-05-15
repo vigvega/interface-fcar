@@ -36,34 +36,38 @@ server <- function(input, output, session) {
     updateTabItems(session, "tabs", "ui_implications")
   })
 
+  observeEvent(input$btnGoConcepts, {
+    updateTabItems(session, "tabs", "ui_concepts")
+  })
+
   #######################
   ### TAB UPLOAD DATA ###
   #######################
 
   fca <- reactive({
-      if(!(is.null(input$file))){
-        req(input$file)
-        ext <- tolower(tools::file_ext(input$file$name))
-        if(ext != "csv" && ext != "rds" && ext != "cxt"){
-          shinyalert(
-            title = "Warning",
-            text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
-            type = "warning"
-          )
+        if(!(is.null(input$file))){
+          req(input$file)
+          ext <- tolower(tools::file_ext(input$file$name))
+          if(ext != "csv" && ext != "rds" && ext != "cxt"){
+            shinyalert(
+              title = "Warning",
+              text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
+              type = "warning"
+            )
 
-          FormalContext$new(planets) # para que no explote simplemente
+            FormalContext$new(planets) # para que no explote simplemente
 
+          }
+          else{
+            FormalContext$new(input$file$datapath)
         }
-        else{
-          FormalContext$new(input$file$datapath)
-      }
-      }
-       else if(input$selectDataset != ""){
-         returnFCFromRepo(input$selectDataset)
-       }
-        else{
-          FormalContext$new(planets) # para que no explote simplemente
         }
+         else if(input$selectDataset != ""){
+           returnFCFromRepo(input$selectDataset)
+         }
+          else{
+            FormalContext$new(planets) # para que no explote simplemente
+          }
   })
 
   # Establecer conexion con el repo
@@ -371,6 +375,9 @@ server <- function(input, output, session) {
       })
 
 
+      ####################
+      ### TAB CONCEPTS ###
+      ####################
   #
   #
   #
@@ -418,55 +425,79 @@ server <- function(input, output, session) {
   #     removeModal()
   #   })
   #
-  #
+
+      output$fcConcepts <- renderTable({
+        fca()$find_concepts()
+        paste(capture.output(print(fca()$concepts)))
+        })
+
   #   # Plot
-  #   output$plot <- renderVisNetwork({
-  #
-  #     #fca()$find_concepts()
-  #     concept_order <- Matrix::t(fcaR:::.subset(fca()$concepts$extents()))
-  #
-  #     M <- concept_order |>
-  #       .reduce_transitivity()
-  #     g <- igraph::graph_from_adjacency_matrix(
-  #       M
-  #     )
-  #
-  #     #V(g)$concepts <- fca()$concepts
-  #     #print(V(g)$concept_object)
-  #
-  #     # idea: le pongo el texto de latex y que lo imprima como tal
-  #
-  #     vis_data <- visNetwork::toVisNetworkData(g)
-  #     vis_data$nodes <- vis_data$nodes |>
-  #       dplyr::mutate(title = glue::glue(
-  #         "Element {label}" # yo quiero que el titulo sea -> fca()$concepts[V(g)]
-  #       ))
-  #
-  #
-  #
-  #
-  #     visNetwork::visNetwork(
-  #       nodes = vis_data$nodes,
-  #       edges = vis_data$edges
-  #     ) |>
-  #       visNetwork::visIgraphLayout(
-  #         layout = "layout_with_sugiyama"
-  #       ) |>
-  #       visNetwork::visOptions(
-  #         highlightNearest = list(
-  #           enabled = TRUE,
-  #           algorithm = "hierarchical",
-  #           labelOnly = FALSE
-  #         ),
-  #         nodesIdSelection = TRUE
-  #       ) |>
-  #       visNetwork::visEdges(
-  #         arrows = list("to" = FALSE),
-  #         smooth = TRUE
-  #       ) |>
-  #       visNetwork::visNodes(
-  #         fixed = TRUE
-  #       ) |>
-  #       visNetwork::visLayout(randomSeed = 130301)
-  #   })
+     output$plot <- renderVisNetwork({
+
+      fca()$find_concepts()
+      dt <- parse_latex_concepts(fca()$concepts$to_latex())
+
+      concept_order <- Matrix::t(fcaR:::.subset(fca()$concepts$extents()))
+
+      M <- concept_order |>
+        fcaR:::.reduce_transitivity()
+      g <- igraph::graph_from_adjacency_matrix(
+        M
+      )
+
+      V(g)$lhs <- dt$lhs
+      V(g)$rhs <- dt$rhs
+
+
+      # idea: le pongo el texto de latex y que lo imprima como tal
+
+      vis_data <- visNetwork::toVisNetworkData(g)
+      vis_data$nodes <- vis_data$nodes |>
+        dplyr::mutate(title = glue::glue(
+          "Concept {label}" # yo quiero que el titulo sea -> fca()$concepts[V(g)]
+        ))
+
+
+      visNetwork::visNetwork(
+        nodes = vis_data$nodes,
+        edges = vis_data$edges
+      ) |>
+        visNetwork::visIgraphLayout(
+          layout = "layout_with_sugiyama"
+        ) |>
+        visNetwork::visOptions(
+          highlightNearest = list(
+            enabled = TRUE,
+            algorithm = "hierarchical",
+            labelOnly = FALSE
+          ),
+          nodesIdSelection = TRUE
+        ) |>
+        visNetwork::visEdges(
+          arrows = list("to" = FALSE),
+          smooth = TRUE
+        ) |>
+        visNetwork::visNodes(
+          fixed = TRUE
+        ) |>
+        visNetwork::visLayout(randomSeed = 130301)
+    })
+
+     output$conceptSelected <- renderText({
+       index <- as.numeric(input$plot_selected)
+       print(index)
+       paste(capture.output(print(fca()$concepts[index])), collapse = "\n")
+     })
+
+     output$lowerNeighbours <- renderText({
+       index <- as.numeric(input$plot_selected)
+       lower <- fca()$concepts$lower_neighbours(fca()$concepts[index])
+       paste(capture.output(print(lower)), collapse = "\n")
+     })
+
+     output$upperNeighbours <- renderText({
+       index <- as.numeric(input$plot_selected)
+       lower <- fca()$concepts$upper_neighbours(fca()$concepts[index])
+       paste(capture.output(print(lower)), collapse = "\n")
+     })
 }
