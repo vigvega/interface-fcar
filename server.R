@@ -40,35 +40,41 @@ server <- function(input, output, session) {
     updateTabItems(session, "tabs", "ui_concepts")
   })
 
+  observeEvent(input$btnGoBackImpl, {
+    updateTabItems(session, "tabs", "ui_implications")
+  })
+
+
   #######################
   ### TAB UPLOAD DATA ###
   #######################
 
   fca <- reactive({
-        if(!(is.null(input$file))){
-          req(input$file)
-          ext <- tolower(tools::file_ext(input$file$name))
-          if(ext != "csv" && ext != "rds" && ext != "cxt"){
-            shinyalert(
-              title = "Warning",
-              text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
-              type = "warning"
-            )
+    if(!(is.null(input$file))){
+      req(input$file)
+      ext <- tolower(tools::file_ext(input$file$name))
+      if(ext != "csv" && ext != "rds" && ext != "cxt"){
+        shinyalert(
+          title = "Warning",
+          text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
+          type = "warning"
+        )
 
-            FormalContext$new(planets) # para que no explote simplemente
+        FormalContext$new(planets) # para que no explote simplemente
 
-          }
-          else{
-            FormalContext$new(input$file$datapath)
-        }
-        }
-         else if(input$selectDataset != ""){
-           returnFCFromRepo(input$selectDataset)
-         }
-          else{
-            FormalContext$new(planets) # para que no explote simplemente
-          }
+      }
+      else{
+        FormalContext$new(input$file$datapath)
+    }
+    }
+     else if(input$selectDataset != ""){
+       returnFCFromRepo(input$selectDataset)
+     }
+      else{
+      FormalContext$new(planets) # para que no explote simplemente
+      }
   })
+
 
   # Establecer conexion con el repo
   observeEvent(input$connectRepo, {
@@ -94,6 +100,7 @@ server <- function(input, output, session) {
   output$contents <- renderUI({
     # no hay datos
     if(is.null(input$file) && input$selectDataset == ""){
+      disable("btnGoBasicOperations")
            tags$div(
              style = "text-align: center;",
              tags$br(),
@@ -273,7 +280,9 @@ server <- function(input, output, session) {
 
   # Aviso de que se van a calcular las implicaciones
        observeEvent(input$tabs, {
-         if (input$tabs == "ui_implications") {
+         #fca()$find_implications() # borrar
+
+         if (input$tabs == "ui_implications" && fca()$implications$cardinality() == 0) {
            showModal(modalDialog(
              title = "Warning!",
              "Do you want to compute the set of implications? This may take a while.",
@@ -284,6 +293,11 @@ server <- function(input, output, session) {
              )
            ))
            reactiveVal(FALSE)
+         }
+         else{
+           output$fcImplications <- renderText({
+             paste(capture.output(print(fca()$implications)), collapse = "\n")
+           })
          }
        })
 
@@ -309,7 +323,7 @@ server <- function(input, output, session) {
         updateMultiInput(
           session = session,
           inputId = "selectLHS",
-          choices = fca()$attributes
+        choices = fca()$attributes
         )
       })
 
@@ -321,10 +335,40 @@ server <- function(input, output, session) {
         )
       })
 
+      observe({
+        updateMultiInput(
+          session = session,
+          inputId = "selectNotLHS",
+          choices = fca()$attributes
+        )
+      })
+
+      observe({
+        updateMultiInput(
+          session = session,
+          inputId = "selectNotRHS",
+          choices = fca()$attributes
+        )
+      })
+
 
       # Aplicar filtros
       observeEvent(input$btnApplyFilters, {
-        filteredImplications <- fca()$implications$filter(lhs = c(input$selectLHS), rhs=c(input$selectRHS))
+
+        imp <- fca()$implications
+        if(input$support > 0){
+          indx <- which(fca()$implications$support() > input$support)
+          imp <- fca()$implications[indx]
+        }
+
+        # Si han escogido algun atributo
+        filteredImplications <- imp$filter(
+          lhs = c(input$selectLHS),
+          not_lhs = c(input$selectNotLHS),
+          rhs=c(input$selectRHS),
+          not_rhs=c(input$selectNotRHS)
+        )
+
         output$fcImplications <- renderText({
           paste(capture.output(print(filteredImplications)), collapse = "\n")
         })
@@ -349,9 +393,15 @@ server <- function(input, output, session) {
         })
       })
 
+      # Aplicar reglas
+      observeEvent(input$selectRulesImplications, {
+        fca()$implications$apply_rules(rules = c(input$selectRulesImplications))
+        output$fcImplications <- renderText({
+          paste(capture.output(print(fca()$implications)), collapse = "\n")
+        })
+      })
 
       # Closure
-
       observe({
         updateMultiInput(
           session = session,
@@ -374,64 +424,123 @@ server <- function(input, output, session) {
         paste(capture.output(print(result)))
       })
 
+      output$downloadRdsImp <- downloadHandler(
+        filename = function() {
+          "fc.rds"
+        },
+        content = function(file) {
+          # Guardo en local
+          fca()$save(filename = "./fc.rds")
+          # Luego lo copio para descarga
+          file.copy("./fc.rds", file)
+        }
+      )
+
+      #   # Modal para ver la tabla latex de implicaciones
+         observeEvent(input$createLatexImplications, {
+           showModal(modalDialog(
+             title = "Latex table for implications",
+             p("Copy the following text and paste it in your .tex file"),
+             verbatimTextOutput("latexTableImplications"),
+             footer = tagList(
+               actionButton("closeModalImplications", "Close", class = "btn-secondary")),
+             size = "m",
+             easyClose = TRUE
+           ))
+         })
+
+         output$latexTableImplications <- renderText({
+           paste(capture.output(print(fca()$implications$to_latex())), collapse = "\n")
+         })
+
+         # Close modal button
+         observeEvent(input$closeModalImplications, {
+           removeModal()
+         })
+
 
       ####################
       ### TAB CONCEPTS ###
       ####################
-  #
-  #
-  #
-  #   # Modal para ver la tabla latex de implicaciones
-  #   observeEvent(input$createLatexImplications, {
-  #     showModal(modalDialog(
-  #       title = "Latex table for implications",
-  #       p("Copy the following text and paste it in your .tex file"),
-  #       verbatimTextOutput("latexTableImplications"),
-  #       footer = tagList(
-  #         actionButton("closeModalImplications", "Close", class = "btn-secondary")),
-  #       size = "m",
-  #       easyClose = TRUE
-  #     ))
-  #   })
-  #
-  #   output$latexTableImplications <- renderText({
-  #     paste(capture.output(print(fca()$implications$to_latex())), collapse = "\n")
-  #   })
-  #
-  #   # Close modal button
-  #   observeEvent(input$closeModalImplications, {
-  #     removeModal()
-  #   })
-  #
-  #   # Modal para ver la tabla latex de conceptos
-  #   observeEvent(input$createLatexConcepts, {
-  #     showModal(modalDialog(
-  #       title = "Latex table for concepts",
-  #       p("Copy the following text and paste it in your .tex file"),
-  #       verbatimTextOutput("latexTableConcepts"),
-  #       footer = tagList(
-  #         actionButton("closeModalConcepts", "Close", class = "btn-secondary")),
-  #       size = "m",
-  #       easyClose = TRUE
-  #     ))
-  #   })
-  #
-  #   output$latexTableConcepts <- renderText({
-  #     paste(capture.output(print(fca()$concepts$to_latex())), collapse = "\n")
-  #   })
-  #
-  #   # Close modal button
-  #   observeEvent(input$closeModalConcepts, {
-  #     removeModal()
-  #   })
-  #
 
-      output$fcConcepts <- renderTable({
-        fca()$find_concepts()
-        paste(capture.output(print(fca()$concepts)))
-        })
+         # Aviso de que se van a calcular los conceptos
+         # observeEvent(input$tabs, {
+         #   #fca()$find_implications() # borrar
+         #
+         #   if (input$tabs == "ui_concepts" && fca()$concepts$is_empty()) {
+         #     print("Entro")
+         #     print(fca()$concepts$is_empty())
+         #     showModal(modalDialog(
+         #       title = "Warning!",
+         #       "Do you want to compute the set of concepts? This may take a while.",
+         #       easyClose = TRUE,
+         #       footer = tagList(
+         #         input_task_button("getConcepts", "Compute set of concepts"),
+         #         actionButton("goBackConc", "Go back")
+         #       )
+         #     ))
+         #     reactiveVal(FALSE)
+         #   }
+         #   else{
+         #     output$fcConcepts <- renderTable({
+         #       paste(capture.output(print(fca()$concepts)))
+         #     })
+         #   }
+         # })
+         #
+         # # Calculo y muestro coceptos
+         # observeEvent(input$getConcepts, {
+         #   Sys.sleep(3)  # Simular una tarea lenta
+         #   fca()$find_concepts()
+         #   #print(fca()$concepts)
+         #   output$fcConcepts <- renderText({
+         #     paste(capture.output(print(fca()$concepts)), collapse = "\n")
+         #   })
+         #   removeModal()
+         # })
+         #
+         # # O vuelvo atras
+         # observeEvent(input$goBackConc, {
+         #   updateTabItems(session, "tabs", "ui_implications")
+         #   removeModal()
+         # })
 
-  #   # Plot
+   # Modal para ver la tabla latex de conceptos
+    observeEvent(input$createLatexConcepts, {
+      showModal(modalDialog(
+        title = "Latex table for concepts",
+        p("Copy the following text and paste it in your .tex file"),
+        verbatimTextOutput("latexTableConcepts"),
+        footer = tagList(
+          actionButton("closeModalConcepts", "Close", class = "btn-secondary")),
+        size = "m",
+        easyClose = TRUE
+      ))
+    })
+
+     output$latexTableConcepts <- renderText({
+      paste(capture.output(print(fca()$concepts$to_latex())), collapse = "\n")
+    })
+
+        # Close modal button
+    observeEvent(input$closeModalConcepts, {
+      removeModal()
+    })
+
+    # Descarga
+    output$downloadRdsConp <- downloadHandler(
+      filename = function() {
+        "fc.rds"
+      },
+      content = function(file) {
+        # Guardo en local
+        fca()$save(filename = "./fc.rds")
+        # Luego lo copio para descarga
+        file.copy("./fc.rds", file)
+      }
+    )
+
+     # Plot
      output$plot <- renderVisNetwork({
 
       fca()$find_concepts()

@@ -1,4 +1,5 @@
 library(shinydashboard)
+library(shiny)
 library(bslib)
 library(readxl)
 library(DT)
@@ -23,7 +24,7 @@ sidebar <- dashboardSidebar(
   collapsed = TRUE, # la barra lateral la oculto por defecto
   sidebarMenu(
     id="tabs",
-    menuItem("Home", tabName = "home", icon = icon("home")),
+    #menuItem("Home", tabName = "home", icon = icon("home")),
     menuItem("Upload data", tabName = "upload_data", icon = icon("play")),
     menuItem("Basic operations", tabName = "basic_operations", icon = icon("play")),
     menuItem("Implications", tabName = "ui_implications", icon = icon("circle-info")),
@@ -34,7 +35,7 @@ sidebar <- dashboardSidebar(
 
 body <- dashboardBody(
   tags$head(
-    tags$link(rel="stylesheet", type="text/css", href="style.css"),
+    #tags$link(rel="stylesheet", type="text/css", href="style.css"),
     tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Lora:wght@400;700&display=swap"),
     tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap"),
     tags$style(HTML("
@@ -50,64 +51,10 @@ body <- dashboardBody(
     "))
   ),
   tabItems(
-    uiHome,
+    #uiHome,
     uiUploadData,
     uiBasicOperations,
-    tabItem(tabName = "ui_implications",
-            fluidRow(
-              column(12,
-                     box(width = 12,
-                         status = "primary",
-                         solidHeader = TRUE,
-                         title = "Implications",
-                         div(style = "height: 40vh; overflow-y: auto; whitespace:pre-wrap; ",
-                             column(6,
-                             selectInput("selectLHS",
-                                         "Choose attributes present in the left:",
-                                         list("--Select--" = ""), multiple = TRUE)
-                             ),
-                             column(6,
-                             selectInput("selectRHS",
-                                         "Choose attributes present in the right:",
-                                         list("--Select--" = ""), multiple = TRUE)
-                             ),
-                             column(12,
-                             actionButton("btnApplyFilters", "Apply"),
-                             input_task_button("btnClearFilters", "Clear"),
-                             br(), br(),
-                             verbatimTextOutput("fcImplications"),
-                             input_task_button("simplifyImplications", "Simplify")
-                             )
-                         )
-                     )
-              )
-            ),
-            fluidRow(
-              column(12,
-                     box(width = 12,
-                         title = "Closure",
-                         status = "primary",
-                         div(style = "height: 20vh; overflow-y: auto; align-items: center;",
-                             selectInput("selectClosure",
-                                         "Choose attributes to compute closure:",
-                                         list("--Select--" = ""), multiple = TRUE),
-                             verbatimTextOutput("implicationsClosure")
-                            # p("Or get table for your LaTex doc..."),
-                            # actionButton("createLatexImplications", "Create table in LaTeX format", class = "btn btn-lg btn-block")
-
-                         )
-                     )
-              )
-
-            ),
-
-            column(12,
-                   div(style = "display: flex; justify-content: space-between;",
-                       actionButton("btnGoBasicOperations", "", icon = icon("arrow-left")),
-                       actionButton("btnGoConcepts", "", icon = icon("arrow-right"))
-                   )
-            )
-    ),
+    uiImplications,
     tabItem(tabName = "ui_concepts",
             fluidRow(
               column(8,
@@ -129,18 +76,29 @@ body <- dashboardBody(
                              verbatimTextOutput("upperNeighbours"),
                              h6("Lower neighbours:"),
                              verbatimTextOutput("lowerNeighbours")
-                                                      )
+                         )
                      )
               )
             ),
 
             column(12,
-                   div(style = "display: flex; justify-content: space-between;",
-                       actionButton("btnGoBasicOperations", "", icon = icon("arrow-left")),
-                       actionButton("btnGoConcepts", "", icon = icon("arrow-right"))
+                   div(style = "display: flex; align-items: center;",
+                       div(
+                         actionBttn("btnGoBackImpl", "Go back", icon = icon("arrow-left"),
+                                    style = "unite", size = "sm", color = "primary")
+                       ),
+                       div(style = "margin-left: auto; display: flex; gap: 10px;",
+                           actionBttn("createLatexConcepts", "Create table in LaTeX format", icon = icon("leaf"),
+                                      style = "material-circle", size = "sm", color = "primary"),
+                           downloadBttn("downloadRdsConp", "Download",
+                                        style = "material-circle", size = "sm", color = "primary"),
+                           #actionBttn("btnGoConcepts", "Go to concepts", icon = icon("arrow-right"),
+                          #            style = "unite", size = "sm", color = "primary")
+                       )
                    )
             )
     )
+
   )
 )
 

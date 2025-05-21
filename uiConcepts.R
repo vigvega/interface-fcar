@@ -1,23 +1,24 @@
 uiConcepts <- tabItem(tabName = "ui_concepts",
                       fluidRow(
-                        column(6,
-                               box(width = 12,
-                                   status = "primary",
-                                   solidHeader = TRUE,
-                                   title = "Concepts",
-                                   div(style = "height: 70vh; overflow-y: auto; whitespace:pre-wrap; ",
-                                       tableOutput("fcConcepts"),
-                                       actionButton("createLatexConcepts", "Create table in LaTeX format", class = "btn btn-lg btn-block")
-                                   )
-                               )
-                        ),
-
-                        column(6,
+                        column(8,
                                box(width = 12,
                                    title = "Plot",
                                    status = "primary",
                                    div(style = "height: 70vh; overflow-y: auto; align-items: center;",
                                        visNetworkOutput("plot", height = "600px")
+                                   )
+                               )
+                        ),
+                        column(4,
+                               box(width = 12,
+                                   title = "Concept Summary",
+                                   status = "primary",
+                                   div(style = "height: 70vh; overflow-y: auto; align-items: center;",
+                                       verbatimTextOutput("conceptSelected"),
+                                       h6("Upper neighbours:"),
+                                       verbatimTextOutput("upperNeighbours"),
+                                       h6("Lower neighbours:"),
+                                       verbatimTextOutput("lowerNeighbours")
                                    )
                                )
                         )
