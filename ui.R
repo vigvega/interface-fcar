@@ -27,8 +27,8 @@ sidebar <- dashboardSidebar(
     #menuItem("Home", tabName = "home", icon = icon("home")),
     menuItem("Upload data", tabName = "upload_data", icon = icon("play")),
     menuItem("Basic operations", tabName = "basic_operations", icon = icon("play")),
-    menuItem("Implications", tabName = "ui_implications", icon = icon("circle-info")),
     menuItem("Concepts", tabName = "ui_concepts", icon = icon("home")),
+    menuItem("Implications", tabName = "ui_implications", icon = icon("circle-info")),
     menuItem("About us", tabName = "about-us", icon = icon("address-card"))
   )
 )
@@ -84,7 +84,7 @@ body <- dashboardBody(
             column(12,
                    div(style = "display: flex; align-items: center;",
                        div(
-                         actionBttn("btnGoBackImpl", "Go back", icon = icon("arrow-left"),
+                         actionBttn("btnGoBack", "Go back", icon = icon("arrow-left"),
                                     style = "unite", size = "sm", color = "primary")
                        ),
                        div(style = "margin-left: auto; display: flex; gap: 10px;",
@@ -92,8 +92,8 @@ body <- dashboardBody(
                                       style = "material-circle", size = "sm", color = "primary"),
                            downloadBttn("downloadRdsConp", "Download",
                                         style = "material-circle", size = "sm", color = "primary"),
-                           #actionBttn("btnGoConcepts", "Go to concepts", icon = icon("arrow-right"),
-                          #            style = "unite", size = "sm", color = "primary")
+                           actionBttn("btnGoImplications", "Go to implications", icon = icon("arrow-right"),
+                                      style = "unite", size = "sm", color = "primary")
                        )
                    )
             )

@@ -1,5 +1,6 @@
 library(httr)
 library(jsonlite)
+library(fcaR)
 
 # Recupero los nombres de los archivos disponibles
 returnNames <- function(){
@@ -138,5 +139,54 @@ parse_latex_concepts <- function(latex_text) {
   return(df)
 }
 
+showPlot <- function(fc){
+  dt <- parse_latex_concepts(fc$concepts$to_latex())
+
+  concept_order <- Matrix::t(fcaR:::.subset(fc$concepts$extents()))
+
+  M <- concept_order |>
+    fcaR:::.reduce_transitivity()
+  g <- igraph::graph_from_adjacency_matrix(
+    M
+  )
+
+  V(g)$lhs <- dt$lhs
+  V(g)$rhs <- dt$rhs
+
+
+  # idea: le pongo el texto de latex y que lo imprima como tal
+
+  vis_data <- visNetwork::toVisNetworkData(g)
+  vis_data$nodes <- vis_data$nodes |>
+    dplyr::mutate(title = glue::glue(
+      "Concept {label}" # yo quiero que el titulo sea -> fca()$concepts[V(g)]
+    ))
+
+
+  visNetwork::visNetwork(
+    nodes = vis_data$nodes,
+    edges = vis_data$edges
+  ) |>
+    visNetwork::visIgraphLayout(
+      layout = "layout_with_sugiyama"
+    ) |>
+    visNetwork::visOptions(
+      highlightNearest = list(
+        enabled = TRUE,
+        algorithm = "hierarchical",
+        labelOnly = FALSE
+      ),
+      nodesIdSelection = TRUE
+    ) |>
+    visNetwork::visEdges(
+      arrows = list("to" = FALSE),
+      smooth = TRUE
+    ) |>
+    visNetwork::visNodes(
+      fixed = TRUE
+    ) |>
+    visNetwork::visLayout(randomSeed = 130301)
+
+  }
 
 

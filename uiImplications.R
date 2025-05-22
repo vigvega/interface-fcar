@@ -57,7 +57,7 @@ uiImplications <- tabItem(tabName = "ui_implications",
                           column(12,
                                  div(style = "display: flex; align-items: center;",
                                      div(
-                                       actionBttn("btnGoBasicOperations", "Go back", icon = icon("arrow-left"),
+                                       actionBttn("btnGoBackConcep", "Go back", icon = icon("arrow-left"),
                                                   style = "unite", size = "sm", color = "primary")
                                      ),
                                      div(style = "margin-left: auto; display: flex; gap: 10px;",
@@ -65,8 +65,8 @@ uiImplications <- tabItem(tabName = "ui_implications",
                                                     style = "material-circle", size = "sm", color = "primary"),
                                          downloadBttn("downloadRdsImp", "Download",
                                                       style = "material-circle", size = "sm", color = "primary"),
-                                         actionBttn("btnGoConcepts", "Go to concepts", icon = icon("arrow-right"),
-                                                    style = "unite", size = "sm", color = "primary")
+                                         #actionBttn("btnGoConcepts", "Go to concepts", icon = icon("arrow-right"),
+                                          #          style = "unite", size = "sm", color = "primary")
                                      )
                                  )
                           )

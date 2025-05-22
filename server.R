@@ -32,16 +32,20 @@ server <- function(input, output, session) {
     updateTabItems(session, "tabs", "upload_data")
   })
 
-  observeEvent(input$btnGoImplications, {
-    updateTabItems(session, "tabs", "ui_implications")
-  })
-
   observeEvent(input$btnGoConcepts, {
     updateTabItems(session, "tabs", "ui_concepts")
   })
 
-  observeEvent(input$btnGoBackImpl, {
+  observeEvent(input$btnGoBack, {
+    updateTabItems(session, "tabs", "basic_operations")
+  })
+
+  observeEvent(input$btnGoImplications, {
     updateTabItems(session, "tabs", "ui_implications")
+  })
+
+  observeEvent(input$btnGoBackConcep, {
+    updateTabItems(session, "tabs", "ui_concepts")
   })
 
 
@@ -377,7 +381,7 @@ server <- function(input, output, session) {
 
       # Limpiar y ver implicaciones sin filtros
       observeEvent(input$btnClearFilters, {
-        Sys.sleep(3)
+        #Sys.sleep(3)
         fca()$find_implications()
         output$fcImplications <- renderText({
           paste(capture.output(print(fca()$implications)), collapse = "\n")
@@ -464,46 +468,86 @@ server <- function(input, output, session) {
       ####################
 
          # Aviso de que se van a calcular los conceptos
-         # observeEvent(input$tabs, {
-         #   #fca()$find_implications() # borrar
-         #
-         #   if (input$tabs == "ui_concepts" && fca()$concepts$is_empty()) {
-         #     print("Entro")
-         #     print(fca()$concepts$is_empty())
-         #     showModal(modalDialog(
-         #       title = "Warning!",
-         #       "Do you want to compute the set of concepts? This may take a while.",
-         #       easyClose = TRUE,
-         #       footer = tagList(
-         #         input_task_button("getConcepts", "Compute set of concepts"),
-         #         actionButton("goBackConc", "Go back")
-         #       )
-         #     ))
-         #     reactiveVal(FALSE)
-         #   }
-         #   else{
-         #     output$fcConcepts <- renderTable({
-         #       paste(capture.output(print(fca()$concepts)))
-         #     })
-         #   }
-         # })
-         #
-         # # Calculo y muestro coceptos
-         # observeEvent(input$getConcepts, {
-         #   Sys.sleep(3)  # Simular una tarea lenta
-         #   fca()$find_concepts()
-         #   #print(fca()$concepts)
-         #   output$fcConcepts <- renderText({
-         #     paste(capture.output(print(fca()$concepts)), collapse = "\n")
-         #   })
-         #   removeModal()
-         # })
-         #
-         # # O vuelvo atras
-         # observeEvent(input$goBackConc, {
-         #   updateTabItems(session, "tabs", "ui_implications")
-         #   removeModal()
-         # })
+         observeEvent(input$tabs, {
+           #fca()$find_implications() # borrar
+           print("Entro")
+           print(fca()$concepts)
+           if (input$tabs == "ui_concepts" && fca()$concepts$is_empty()) {
+
+             showModal(modalDialog(
+               title = "Warning!",
+               "Do you want to compute the set of concepts? This may take a while.",
+               easyClose = TRUE,
+               footer = tagList(
+                 input_task_button("getConcepts", "Compute set of concepts"),
+                 actionButton("goBackConc", "Go back")
+               )
+             ))
+             reactiveVal(FALSE)
+           }
+           else{
+             output$plot <- renderVisNetwork({
+               showPlot(fca())
+             })
+
+             output$conceptSelected <- renderText({
+               index <- as.numeric(input$plot_selected)
+               print(index)
+               paste(capture.output(print(fca()$concepts[index])), collapse = "\n")
+             })
+
+             output$lowerNeighbours <- renderText({
+               index <- as.numeric(input$plot_selected)
+               lower <- fca()$concepts$lower_neighbours(fca()$concepts[index])
+               paste(capture.output(print(lower)), collapse = "\n")
+             })
+
+             output$upperNeighbours <- renderText({
+               index <- as.numeric(input$plot_selected)
+               lower <- fca()$concepts$upper_neighbours(fca()$concepts[index])
+               paste(capture.output(print(lower)), collapse = "\n")
+             })
+           }
+         })
+
+          # Calculo y muestro conceptos
+          observeEvent(input$getConcepts, {
+            Sys.sleep(3)  # Simular una tarea lenta
+            fca()$find_concepts()
+
+            # PLOT
+            output$plot <- renderVisNetwork({
+              showPlot(fca())
+            })
+
+            output$conceptSelected <- renderText({
+              index <- as.numeric(input$plot_selected)
+              print(index)
+              paste(capture.output(print(fca()$concepts[index])), collapse = "\n")
+            })
+
+            output$lowerNeighbours <- renderText({
+              index <- as.numeric(input$plot_selected)
+              lower <- fca()$concepts$lower_neighbours(fca()$concepts[index])
+              paste(capture.output(print(lower)), collapse = "\n")
+            })
+
+            output$upperNeighbours <- renderText({
+              index <- as.numeric(input$plot_selected)
+              lower <- fca()$concepts$upper_neighbours(fca()$concepts[index])
+              paste(capture.output(print(lower)), collapse = "\n")
+            })
+
+
+
+            removeModal()
+          })
+
+          # O vuelvo atras
+          observeEvent(input$goBackConc, {
+            updateTabItems(session, "tabs", "ui_implications")
+            removeModal()
+          })
 
    # Modal para ver la tabla latex de conceptos
     observeEvent(input$createLatexConcepts, {
@@ -540,73 +584,5 @@ server <- function(input, output, session) {
       }
     )
 
-     # Plot
-     output$plot <- renderVisNetwork({
 
-      fca()$find_concepts()
-      dt <- parse_latex_concepts(fca()$concepts$to_latex())
-
-      concept_order <- Matrix::t(fcaR:::.subset(fca()$concepts$extents()))
-
-      M <- concept_order |>
-        fcaR:::.reduce_transitivity()
-      g <- igraph::graph_from_adjacency_matrix(
-        M
-      )
-
-      V(g)$lhs <- dt$lhs
-      V(g)$rhs <- dt$rhs
-
-
-      # idea: le pongo el texto de latex y que lo imprima como tal
-
-      vis_data <- visNetwork::toVisNetworkData(g)
-      vis_data$nodes <- vis_data$nodes |>
-        dplyr::mutate(title = glue::glue(
-          "Concept {label}" # yo quiero que el titulo sea -> fca()$concepts[V(g)]
-        ))
-
-
-      visNetwork::visNetwork(
-        nodes = vis_data$nodes,
-        edges = vis_data$edges
-      ) |>
-        visNetwork::visIgraphLayout(
-          layout = "layout_with_sugiyama"
-        ) |>
-        visNetwork::visOptions(
-          highlightNearest = list(
-            enabled = TRUE,
-            algorithm = "hierarchical",
-            labelOnly = FALSE
-          ),
-          nodesIdSelection = TRUE
-        ) |>
-        visNetwork::visEdges(
-          arrows = list("to" = FALSE),
-          smooth = TRUE
-        ) |>
-        visNetwork::visNodes(
-          fixed = TRUE
-        ) |>
-        visNetwork::visLayout(randomSeed = 130301)
-    })
-
-     output$conceptSelected <- renderText({
-       index <- as.numeric(input$plot_selected)
-       print(index)
-       paste(capture.output(print(fca()$concepts[index])), collapse = "\n")
-     })
-
-     output$lowerNeighbours <- renderText({
-       index <- as.numeric(input$plot_selected)
-       lower <- fca()$concepts$lower_neighbours(fca()$concepts[index])
-       paste(capture.output(print(lower)), collapse = "\n")
-     })
-
-     output$upperNeighbours <- renderText({
-       index <- as.numeric(input$plot_selected)
-       lower <- fca()$concepts$upper_neighbours(fca()$concepts[index])
-       paste(capture.output(print(lower)), collapse = "\n")
-     })
 }

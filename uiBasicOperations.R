@@ -58,7 +58,7 @@ uiBasicOperations <-     tabItem(tabName = "basic_operations",
                                                            style = "material-circle", size = "sm", color = "primary"),
                                                 downloadBttn("downloadRds", "Download",
                                                              style = "material-circle", size = "sm", color = "primary"),
-                                                actionBttn("btnGoImplications", "Go to implications", icon = icon("arrow-right"),
+                                                actionBttn("btnGoConcepts", "Go to concepts", icon = icon("arrow-right"),
                                                            style = "unite", size = "sm", color = "primary")
                                             )
                                         )
