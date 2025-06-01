@@ -19,6 +19,10 @@ source("uiConcepts.R")
 
 server <- function(input, output, session) {
 
+  # Variables reactivas
+  rv <- reactiveValues()
+  history <- reactiveVal("")
+
   # Eventos para navegar entre pestañas
   observeEvent(input$btn_start, {
     updateTabItems(session, "tabs", "upload_data")
@@ -54,29 +58,29 @@ server <- function(input, output, session) {
   #######################
 
   fca <- reactive({
-    if(!(is.null(input$file))){
-      req(input$file)
-      ext <- tolower(tools::file_ext(input$file$name))
-      if(ext != "csv" && ext != "rds" && ext != "cxt"){
-        shinyalert(
-          title = "Warning",
-          text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
-          type = "warning"
-        )
+     if(!(is.null(input$file))){
+       req(input$file)
+       ext <- tolower(tools::file_ext(input$file$name))
+       if(ext != "csv" && ext != "rds" && ext != "cxt"){
+         shinyalert(
+           title = "Warning",
+           text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
+           type = "warning"
+         )
 
-        FormalContext$new(planets) # para que no explote simplemente
+         FormalContext$new(planets) # para que no explote simplemente
 
-      }
-      else{
-        FormalContext$new(input$file$datapath)
-    }
-    }
-     else if(input$selectDataset != ""){
-       returnFCFromRepo(input$selectDataset)
+       }
+       else{
+         FormalContext$new(input$file$datapath)
      }
-      else{
-      FormalContext$new(planets) # para que no explote simplemente
+     }
+      else if(input$selectDataset != ""){
+        returnFCFromRepo(input$selectDataset)
       }
+       else{
+       FormalContext$new(planets) # para que no explote simplemente
+       }
   })
 
 
@@ -90,9 +94,9 @@ server <- function(input, output, session) {
       output$connectionFailed <- renderText({ "Something went wrong. Please, try again" })
     }
     else{
-      print(selectOptions()[[2]])
+
     names(options) <- selectOptions()[[2]]
-    #print(names(options))
+
     updateSelectInput(
       session,
       "selectDataset",
@@ -132,6 +136,7 @@ server <- function(input, output, session) {
         }
         else{ # se ha subido fichero valido
           enable("btnGoBasicOperations")
+
           tableOutput("tableData")
         }
       }
@@ -143,7 +148,7 @@ server <- function(input, output, session) {
   })
 
   output$tableData <- renderTable({
-    #print(fca())
+
     parse_latex_table(fca()$to_latex())
   })
 
@@ -469,8 +474,7 @@ server <- function(input, output, session) {
 
          # Aviso de que se van a calcular los conceptos
          observeEvent(input$tabs, {
-           #fca()$find_implications() # borrar
-           print("Entro")
+           fca()$find_concepts() # borrar
            print(fca()$concepts)
            if (input$tabs == "ui_concepts" && fca()$concepts$is_empty()) {
 
@@ -491,18 +495,34 @@ server <- function(input, output, session) {
              })
 
              output$conceptSelected <- renderText({
+               if(input$plot_selected==""){
+                 return("Nothing selected")
+               }
+
                index <- as.numeric(input$plot_selected)
                print(index)
                paste(capture.output(print(fca()$concepts[index])), collapse = "\n")
              })
 
+             output$allConcepts <- renderText({
+               paste(capture.output(print(fca()$concepts)), collapse = "\n")
+             })
+
              output$lowerNeighbours <- renderText({
+               if(input$plot_selected==""){
+                 return("Nothing selected")
+               }
+
                index <- as.numeric(input$plot_selected)
                lower <- fca()$concepts$lower_neighbours(fca()$concepts[index])
                paste(capture.output(print(lower)), collapse = "\n")
              })
 
              output$upperNeighbours <- renderText({
+               if(input$plot_selected==""){
+                 return("Nothing selected")
+               }
+
                index <- as.numeric(input$plot_selected)
                lower <- fca()$concepts$upper_neighbours(fca()$concepts[index])
                paste(capture.output(print(lower)), collapse = "\n")
@@ -526,6 +546,10 @@ server <- function(input, output, session) {
               paste(capture.output(print(fca()$concepts[index])), collapse = "\n")
             })
 
+            output$allConcepts <- renderText({
+              paste(capture.output(print(fca()$concepts)), , collapse = "\n")
+            })
+
             output$lowerNeighbours <- renderText({
               index <- as.numeric(input$plot_selected)
               lower <- fca()$concepts$lower_neighbours(fca()$concepts[index])
@@ -537,8 +561,6 @@ server <- function(input, output, session) {
               lower <- fca()$concepts$upper_neighbours(fca()$concepts[index])
               paste(capture.output(print(lower)), collapse = "\n")
             })
-
-
 
             removeModal()
           })
@@ -584,5 +606,209 @@ server <- function(input, output, session) {
       }
     )
 
+    # Selección de atributos iniciales
+    observe({
+      disable("btnBeginExploration")
+      disable("btnNextStep")
+      updateSelectInput(
+        session = session,
+        inputId = "initAtt",
+        choices = fca()$attributes
+      )
+    })
+
+    # Selección de atributos objetivo
+    observe({
+      disable("btnBeginExploration")
+      disable("btnNextStep")
+      updateSelectInput(
+        session = session,
+        inputId = "targetAtt",
+        choices = fca()$attributes
+      )
+    })
+
+    output$plot2 <- renderVisNetwork({
+      g <- getGraph(fca()$concepts)
+      showPlot2(g)
+    })
+
+    # Mostrar target concept
+    observeEvent({input$initAtt
+      input$targetAtt}, {
+      # Nodo inicial
+      index_init <- getOneConcept(fca(), input$initAtt)
+
+      # Nodo target
+      index_target <- getOneConcept(fca(), input$targetAtt)
+
+      nodes <- getGraph(fca()$concepts)$nodes
+
+      # Cambio su color
+      nodes$color <- ifelse((nodes$id == index_init | nodes$id == index_target), "blue", "#97C2FC")
+
+
+      visNetworkProxy("plot2") %>%
+        visUpdateNodes(nodes = nodes)
+
+      enable("btnBeginExploration")
+
+
+    })
+
+    output$allConcepts <- renderText({
+      paste(capture.output(print(fca()$concepts), collapse = "\n"))
+    })
+
+    output$initConcept <- renderText({
+      index_init <- getOneConcept(fca(), input$initAtt)
+      paste(capture.output(print(fca()$concepts[index_init]), collapse = "\n"))
+    })
+
+    output$targetConcept <- renderText({
+      index_target <- getOneConcept(fca(), input$targetAtt)
+      paste(capture.output(print(fca()$concepts[index_target]), collapse = "\n"))
+    })
+
+
+    observeEvent(input$btnBeginExploration, {
+      # Construyo el subretículo
+      show("btnNextStep")
+      init <- getOneConcept(fca(), input$initAtt)
+      target <- getOneConcept(fca(), input$targetAtt)
+      rv$sublattice <- getSublattice(fca()$concepts, init, target)
+
+      # Compruebo si ha sido posible crearlo
+      if(is.null(rv$sublattice)){
+        shinyalert("Oops!", "Those attributes are not reachable. Please, choose others.", type = "error")
+      }
+      else{
+        # Actualizo lo de todos los conceptos
+        output$allConcepts <- renderText({
+          paste(capture.output(print(rv$sublattice), collapse = "\n"))
+        })
+      g <- getGraph(rv$sublattice)
+
+      output$plot2 <- renderVisNetwork({
+        showPlot2(g)
+
+      })
+
+      # Cambio de color del primero y el ultimo, y los que se pueden seleccionar
+      g$nodes$color <- character(length(g$nodes$id))  # Inicializar el vector de colores
+
+      for (i in seq_along(g$nodes$id)) {
+        if (g$nodes$id[i] == 1 || g$nodes$id[i] == rv$sublattice$size()) {
+          g$nodes$color[i] <- "blue"
+        }
+        else if(g$nodes$id[i] %in% indexLowerNeighbours(rv$sublattice, rv$sublattice[1])){
+          g$nodes$color[i] <- "orange"
+        }
+        else {
+          g$nodes$color[i] <- "#97C2FC"
+        }
+      }
+
+
+      visNetworkProxy("plot2") %>%
+        visUpdateNodes(nodes = g$nodes)
+
+      # Muestro el siguiente paso
+      output$nextStepConcepts <- renderText({
+        paste(capture.output(print(rv$sublattice$lower_neighbours(rv$sublattice[1])), collapse = "\n"))
+      })
+
+      # Guardo avance en el historial
+      nuevo_texto <- paste(capture.output(print(rv$sublattice[1])), collapse = "\n")
+      history(paste0(history(), "\n", nuevo_texto))
+
+      }
+
+    })
+
+    # Btn clear -> borra el progreso
+    observeEvent(input$btnClearExploration, {
+      output$plot2 <- renderVisNetwork({
+        showPlot2(getGraph(fca()$concepts))
+      })
+    })
+
+    # Habilito el boton de siguiente paso si se pulsa algo en un nodo correcto
+    observeEvent(input$plot2_selected, {
+      if(input$plot2_selected=="")
+        disable("btnNextStep")
+      else{
+        # AQUI TENGO QUE VER SI ES UN VECINO INFERIOR
+        if(!(is.null(rv$sublattice)) && input$plot2_selected %in% indexLowerNeighbours(rv$sublattice, rv$sublattice[1]))
+          enable("btnNextStep")
+        else{
+          disable("btnNextStep")
+        }
+      }
+    })
+
+    # Btn next step -> enable si se pulsa un nodo correcto
+    observeEvent(input$btnNextStep, {
+
+        chosenConcept <- as.numeric(input$plot2_selected)
+
+        rv$sublattice <- getSublattice(rv$sublattice, rv$sublattice[chosenConcept], rv$sublattice[rv$sublattice$size()])
+
+        g <- getGraph(rv$sublattice)
+        output$plot2 <- renderVisNetwork({
+          showPlot2(g)
+        })
+
+        # Cambio de color del primero y el ultimo, y los que se pueden seleccionar
+        g$nodes$color <- character(length(g$nodes$id))  # Inicializar el vector de colores
+        edge_colors_originales <- g$edges$color
+        for (i in seq_along(g$nodes$id)) {
+          if (g$nodes$id[i] == 1 || g$nodes$id[i] == rv$sublattice$size()) {
+            g$nodes$color[i] <- "blue"
+          }
+          else if(g$nodes$id[i] %in% indexLowerNeighbours(rv$sublattice, rv$sublattice[1])){
+            g$nodes$color[i] <- "orange"
+          }
+          else {
+            g$nodes$color[i] <- "#97C2FC"
+          }
+        }
+        g$edges$color <- edge_colors_originales
+
+
+        visNetworkProxy("plot2") %>%
+          visUpdateNodes(nodes = g$nodes)
+
+        # Muestro el siguiente paso
+        output$nextStepConcepts <- renderText({
+          paste(capture.output(print(rv$sublattice$lower_neighbours(rv$sublattice[1])), collapse = "\n"))
+        })
+
+        # Actualizo lo de todos los conceptos
+        output$allConcepts <- renderText({
+          paste(capture.output(print(rv$sublattice), collapse = "\n"))
+        })
+
+
+        # Actualizo el historial
+        new <- rv$sublattice[chosenConcept]
+
+        nuevo_texto <- paste(capture.output(print(new)), collapse = "\n")
+        history(paste0(history(), "\n", nuevo_texto))
+
+      # Si he llegado al final, se deja de pulsar
+        if(rv$sublattice$size() == 2){
+          hide("btnNextStep")
+          last <- rv$sublattice[rv$sublattice$size()]
+
+          nuevo_texto <- paste(capture.output(print(last)), collapse = "\n")
+          history(paste0(history(), "\n", nuevo_texto))
+        }
+
+    })
+
+    output$history <- renderText({
+      history()
+    })
 
 }

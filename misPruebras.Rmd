@@ -29,3 +29,48 @@ set_objects$assign(Megaman = 1)
 fca$intent(set_objects)
 print(set_objects)
 ```
+
+```{r}
+find_one_concept <- function(lattice, closed_set) {
+  
+  intents <- lattice$intents()
+  v <- as(as(as_vector(closed_set), "matrix"), "dgCMatrix")
+  Matrix::which(fcaR:::.equal_sets(v, intents))
+  
+}
+
+library(fcaR)
+fc <- FormalContext$new(planets)
+fc$find_concepts()
+S <- Set$new(fc$attributes)
+S$assign(small = 1)
+closed_set <- fc$closure(S)
+c <- fc$concepts[find_one_concept(lattice = fc$concepts,  closed_set = closed_set)]
+# Devuelve el índice del concepto
+```
+
+```{r}
+# Init
+i <- fc$concepts[2]
+# Target
+t <- fc$concepts[12]
+
+sub <- fc$concepts$subconcepts(i)
+sup <- fc$concepts$superconcepts(t)
+
+subIntents <- sub$intents()
+subExtents <- sub$extents()
+
+supIntents <- sup$intents()
+supExtents <- sup$extents()
+
+sameAtt <- fcaR:::.equal_sets(subIntents, supIntents)
+sameObj <- identical <- fcaR:::.equal_sets(subExtents, supExtents)
+
+which(Matrix::colSums(sameAtt) == 1 & Matrix::colSums(sameObj) == 1)
+
+```
+
+```{r}
+
+```

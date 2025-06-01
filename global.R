@@ -39,13 +39,11 @@ returnFCFromRepo <- function(option){
     )
   )
 
-  print(option)
 
   if (inherits(err, "try-error")) {
     stop("Download error.")
   } else {
     print("Found context.")
-    print(option)
 
     meta <- yaml::read_yaml("https://fcarepository.org/contexts.yaml")[[option]]
 
@@ -141,7 +139,7 @@ parse_latex_concepts <- function(latex_text) {
 
 showPlot <- function(fc){
   dt <- parse_latex_concepts(fc$concepts$to_latex())
-
+  l <- labels(fc)
   concept_order <- Matrix::t(fcaR:::.subset(fc$concepts$extents()))
 
   M <- concept_order |>
@@ -158,9 +156,7 @@ showPlot <- function(fc){
 
   vis_data <- visNetwork::toVisNetworkData(g)
   vis_data$nodes <- vis_data$nodes |>
-    dplyr::mutate(title = glue::glue(
-      "Concept {label}" # yo quiero que el titulo sea -> fca()$concepts[V(g)]
-    ))
+    dplyr::mutate(label = l)
 
 
   visNetwork::visNetwork(
@@ -187,6 +183,128 @@ showPlot <- function(fc){
     ) |>
     visNetwork::visLayout(randomSeed = 130301)
 
-  }
+}
+
+getGraph <- function(concepts){
+  dt <- parse_latex_concepts(concepts$to_latex())
+
+  concept_order <- Matrix::t(fcaR:::.subset(concepts$extents()))
+
+
+  M <- concept_order |>
+    fcaR:::.reduce_transitivity()
+  g <- igraph::graph_from_adjacency_matrix(
+    M
+  )
+
+  V(g)$lhs <- dt$lhs
+  V(g)$rhs <- dt$rhs
+
+
+  # idea: le pongo el texto de latex y que lo imprima como tal
+
+  vis_data <- visNetwork::toVisNetworkData(g)
+  vis_data$nodes <- vis_data$nodes |>
+    dplyr::mutate(label = glue::glue(
+      "{label}" # yo quiero que el titulo sea -> fca()$concepts[V(g)]
+    ))
+
+  return(vis_data)
+
+}
+
+showPlot2 <- function(vis_data){
+  visNetwork::visNetwork(
+    nodes = vis_data$nodes,
+    edges = vis_data$edges
+  ) |>
+    visNetwork::visIgraphLayout(
+      layout = "layout_with_sugiyama"
+    ) |>
+    visNetwork::visOptions(
+      highlightNearest = list(
+        enabled = TRUE,
+        algorithm = "hierarchical",
+        labelOnly = FALSE
+      ),
+      nodesIdSelection = TRUE
+    ) |>
+    visNetwork::visEdges(
+      arrows = list("to" = FALSE),
+      smooth = TRUE
+    ) |>
+    visNetwork::visNodes(
+      fixed = TRUE
+    ) |>
+    visNetwork::visLayout(randomSeed = 130301)
+}
+
+labels <- function(fc){
+  subconcepts_matrix <- fcaR:::.subset(fc$concepts$extents())
+  l <- fcaR:::obtain_reduced_labels(subconcepts_matrix, fc$concepts$intents(), fc$attributes)
+  return(l)
+}
+
+# Encontrar concepto
+find_one_concept <- function(lattice, closed_set) {
+
+  intents <- lattice$intents()
+  v <- as(as(as_vector(closed_set), "matrix"), "dgCMatrix")
+  Matrix::which(fcaR:::.equal_sets(v, intents))
+
+}
+
+# Obtener concepto
+getOneConcept <- function(fc, attributes){
+  S <- Set$new(fc$attributes)
+  sapply(attributes, function(x){
+    do.call(S$assign, setNames(list(1), x))
+  })
+  closed_set <- fc$closure(S)
+  index <- find_one_concept(lattice = fc$concepts,  closed_set = closed_set)
+
+  return(index)
+}
+
+
+# Concepts perteneciente al subreticulo
+# i: concepto inicial
+# t: concepto objetivo
+# lo que hago es simplemente la intersección
+getSublattice <- function(concepts, i, t){
+  sub <- concepts$subconcepts(i)
+  sup <- concepts$superconcepts(t)
+
+  subIntents <- sub$intents()
+  subExtents <- sub$extents()
+
+  supIntents <- sup$intents()
+  supExtents <- sup$extents()
+
+  sameAtt <- fcaR:::.equal_sets(subIntents, supIntents)
+  sameObj <- identical <- fcaR:::.equal_sets(subExtents, supExtents)
+
+  indexes <- which(Matrix::colSums(sameAtt) == 1 & Matrix::colSums(sameObj) == 1)
+  sublattice <- concepts$sublattice(indexes)
+
+  return(sublattice)
+}
+
+indexLowerNeighbours <- function(concepts, c){
+  n <- concepts$lower_neighbours(c)
+  intents <- n$intents()
+  extents <- n$extents()
+
+  allIntents <- concepts$intents()
+  allExtents <- concepts$extents()
+
+
+  sameAtt <- fcaR:::.equal_sets(intents, allIntents)
+  sameObj <- identical <- fcaR:::.equal_sets(extents, allExtents)
+
+  indexes <- which(Matrix::colSums(sameAtt) == 1 & Matrix::colSums(sameObj) == 1)
+
+  return(indexes)
+}
 
 
