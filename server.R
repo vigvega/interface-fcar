@@ -58,29 +58,29 @@ server <- function(input, output, session) {
   #######################
 
   fca <- reactive({
-     if(!(is.null(input$file))){
-       req(input$file)
-       ext <- tolower(tools::file_ext(input$file$name))
-       if(ext != "csv" && ext != "rds" && ext != "cxt"){
-         shinyalert(
-           title = "Warning",
-           text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
-           type = "warning"
-         )
+      if(!(is.null(input$file))){
+        req(input$file)
+        ext <- tolower(tools::file_ext(input$file$name))
+        if(ext != "csv" && ext != "rds" && ext != "cxt"){
+          shinyalert(
+            title = "Warning",
+            text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
+            type = "warning"
+          )
 
-         FormalContext$new(planets) # para que no explote simplemente
+          FormalContext$new(planets) # para que no explote simplemente
 
-       }
-       else{
-         FormalContext$new(input$file$datapath)
-     }
-     }
-      else if(input$selectDataset != ""){
-        returnFCFromRepo(input$selectDataset)
+        }
+        else{
+          FormalContext$new(input$file$datapath)
       }
-       else{
-       FormalContext$new(planets) # para que no explote simplemente
+      }
+       else if(input$selectDataset != ""){
+         returnFCFromRepo(input$selectDataset)
        }
+        else{
+        FormalContext$new(planets) # para que no explote simplemente
+        }
   })
 
 
@@ -136,19 +136,19 @@ server <- function(input, output, session) {
         }
         else{ # se ha subido fichero valido
           enable("btnGoBasicOperations")
-
-          tableOutput("tableData")
+          d <- parse_latex_table(fca()$to_latex())
+          DT::renderDT(d)
         }
       }
       else{ # otros casos (select)
         enable("btnGoBasicOperations")
-        tableOutput("tableData")
+        d <- parse_latex_table(fca()$to_latex())
+        DT::renderDT(d)
       }
     }
   })
 
   output$tableData <- renderTable({
-
     parse_latex_table(fca()$to_latex())
   })
 
@@ -156,6 +156,10 @@ server <- function(input, output, session) {
   ############################
   ### TAB BASIC OPERATIONS ###
   ############################
+
+  output$fcBasicOperations <- renderUI({
+        tableOutput("tableData")
+  })
 
 
   # # Visualizo contexto formal
@@ -166,16 +170,18 @@ server <- function(input, output, session) {
   # Clarify
   observeEvent(input$clarify, {
     fca()$clarify()
-    output$formalContext <- renderText({
-      paste(capture.output(print(fca())), collapse = "\n")
+
+    output$fcBasicOperations <- renderTable({
+      parse_latex_table(fca()$to_latex())
     })
   })
 
   # Reduce
   observeEvent(input$reduce, {
     fca()$reduce()
-    output$formalContext <- renderText({
-      paste(capture.output(print(fca())), collapse = "\n")
+
+    output$fcBasicOperations <- renderTable({
+      parse_latex_table(fca()$to_latex())
     })
   })
 
@@ -206,7 +212,7 @@ server <- function(input, output, session) {
 
   # Para mostrar los resultados de las operaciones anteriores
 
-    output$intentResult <- renderText({
+    output$intentResult <- renderUI({
 
       if(is.null(input$intentOptions)){
         return("Nothing selected")
@@ -217,7 +223,8 @@ server <- function(input, output, session) {
         do.call(set_objects$assign, setNames(list(1), x))
       })
       result <- fca()$intent(set_objects)
-      paste(capture.output(print(result)))
+      text <- capture.output(print(result))
+      HTML(paste(text, collapse = "<br>"))
     })
 
     output$extentResult <- renderText({
@@ -231,7 +238,8 @@ server <- function(input, output, session) {
         do.call(set_attributes$assign, setNames(list(1), x))
       })
       result <- fca()$extent(set_attributes)
-      paste(capture.output(print(result)))
+      text <- capture.output(print(result))
+      HTML(paste(text, collapse = "<br>"))
     })
 
     output$closureResult <- renderText({
@@ -245,7 +253,8 @@ server <- function(input, output, session) {
         do.call(set_attributes$assign, setNames(list(1), x))
       })
       result <- fca()$closure(set_attributes)
-      paste(capture.output(print(result)))
+      text <- capture.output(print(result))
+      HTML(paste(text, collapse = "<br>"))
     })
 
     # # Modal para ver la tabla latex del contexto formal
@@ -494,39 +503,77 @@ server <- function(input, output, session) {
                showPlot(fca())
              })
 
-             output$conceptSelected <- renderText({
-               if(input$plot_selected==""){
-                 return("Nothing selected")
-               }
+             output$allConcepts <- renderTable({
+               parse_latex_concepts(fca()$concepts$to_latex())
+             })
 
+             output$conceptSelected <- renderUI({
+
+               if (is.null(input$plot_selected) || input$plot_selected == "") {
+                 return(HTML("<p>Nothing selected</p>"))
+               }
                index <- as.numeric(input$plot_selected)
-               print(index)
-               paste(capture.output(print(fca()$concepts[index])), collapse = "\n")
+               renderTable({
+                 parse_latex_concepts(fca()$concepts[index]$to_latex())
+               })
              })
 
-             output$allConcepts <- renderText({
-               paste(capture.output(print(fca()$concepts)), collapse = "\n")
-             })
+             # output$conceptSelected <- renderText({
+             #   if(input$plot_selected==""){
+             #     return("Nothing selected")
+             #   }
+             #
+             #   index <- as.numeric(input$plot_selected)
+             #   text <- capture.output(print(fca()$concepts[index]))
+             #   HTML(paste(text, collapse = "<br>"))
+             #   #paste(capture.output(print(fca()$concepts[index])), collapse = "\n")
+             # })
 
-             output$lowerNeighbours <- renderText({
-               if(input$plot_selected==""){
-                 return("Nothing selected")
+             output$upperNeighbours <- renderUI({
+
+               if (is.null(input$plot_selected) || input$plot_selected == "") {
+                 return(HTML("<p>Nothing selected</p>"))
                }
+               index <- as.numeric(input$plot_selected)
+               upper <- fca()$concepts$upper_neighbours(fca()$concepts[index])
+               renderTable({
+                 parse_latex_concepts(upper$to_latex())
+               })
+             })
 
+             output$lowerNeighbours <- renderUI({
+
+               if (is.null(input$plot_selected) || input$plot_selected == "") {
+                 return(HTML("<p>Nothing selected</p>"))
+               }
                index <- as.numeric(input$plot_selected)
                lower <- fca()$concepts$lower_neighbours(fca()$concepts[index])
-               paste(capture.output(print(lower)), collapse = "\n")
+               renderTable({
+                 parse_latex_concepts(lower$to_latex())
+               })
              })
 
-             output$upperNeighbours <- renderText({
-               if(input$plot_selected==""){
-                 return("Nothing selected")
-               }
 
-               index <- as.numeric(input$plot_selected)
-               lower <- fca()$concepts$upper_neighbours(fca()$concepts[index])
-               paste(capture.output(print(lower)), collapse = "\n")
-             })
+             # output$lowerNeighbours <- renderText({
+             #   if(input$plot_selected==""){
+             #     return("Nothing selected")
+             #   }
+             #
+             #   index <- as.numeric(input$plot_selected)
+             #   lower <- fca()$concepts$lower_neighbours(fca()$concepts[index])
+             #   paste(capture.output(print(lower)), collapse = "\n")
+             # })
+
+             # output$upperNeighbours <- renderText({
+             #   if(input$plot_selected==""){
+             #     return("Nothing selected")
+             #   }
+             #
+             #   index <- as.numeric(input$plot_selected)
+             #   lower <- fca()$concepts$upper_neighbours(fca()$concepts[index])
+             #   paste(capture.output(print(lower)), collapse = "\n")
+             # })
+
            }
          })
 
@@ -546,8 +593,8 @@ server <- function(input, output, session) {
               paste(capture.output(print(fca()$concepts[index])), collapse = "\n")
             })
 
-            output$allConcepts <- renderText({
-              paste(capture.output(print(fca()$concepts)), , collapse = "\n")
+            output$allConcepts <- renderTable({
+              parse_latex_concepts(rv$sublattice$to_latex())
             })
 
             output$lowerNeighbours <- renderText({
@@ -656,18 +703,20 @@ server <- function(input, output, session) {
 
     })
 
-    output$allConcepts <- renderText({
-      paste(capture.output(print(fca()$concepts), collapse = "\n"))
+    output$allConcepts <- renderTable({
+      parse_latex_concepts(rv$sublattice$to_latex())
     })
 
-    output$initConcept <- renderText({
+    output$initConcept <- renderTable({
       index_init <- getOneConcept(fca(), input$initAtt)
-      paste(capture.output(print(fca()$concepts[index_init]), collapse = "\n"))
+      d <- fca()$concepts[index_init]$to_latex()
+      parse_latex_concepts(d)
     })
 
-    output$targetConcept <- renderText({
+    output$targetConcept <- renderTable({
       index_target <- getOneConcept(fca(), input$targetAtt)
-      paste(capture.output(print(fca()$concepts[index_target]), collapse = "\n"))
+      d <- fca()$concepts[index_target]$to_latex()
+      parse_latex_concepts(d)
     })
 
 
@@ -684,8 +733,8 @@ server <- function(input, output, session) {
       }
       else{
         # Actualizo lo de todos los conceptos
-        output$allConcepts <- renderText({
-          paste(capture.output(print(rv$sublattice), collapse = "\n"))
+        output$allConcepts <- renderTable({
+          parse_latex_concepts(rv$sublattice$to_latex())
         })
       g <- getGraph(rv$sublattice)
 
@@ -714,8 +763,9 @@ server <- function(input, output, session) {
         visUpdateNodes(nodes = g$nodes)
 
       # Muestro el siguiente paso
-      output$nextStepConcepts <- renderText({
-        paste(capture.output(print(rv$sublattice$lower_neighbours(rv$sublattice[1])), collapse = "\n"))
+      output$nextStepConcepts <- renderTable({
+        d <- rv$sublattice$lower_neighbours(rv$sublattice[1])$to_latex()
+        parse_latex_concepts(d)
       })
 
       # Guardo avance en el historial
@@ -751,9 +801,10 @@ server <- function(input, output, session) {
     observeEvent(input$btnNextStep, {
 
         chosenConcept <- as.numeric(input$plot2_selected)
+        new <- rv$sublattice[chosenConcept]
+
 
         rv$sublattice <- getSublattice(rv$sublattice, rv$sublattice[chosenConcept], rv$sublattice[rv$sublattice$size()])
-
         g <- getGraph(rv$sublattice)
         output$plot2 <- renderVisNetwork({
           showPlot2(g)
@@ -761,8 +812,8 @@ server <- function(input, output, session) {
 
         # Cambio de color del primero y el ultimo, y los que se pueden seleccionar
         g$nodes$color <- character(length(g$nodes$id))  # Inicializar el vector de colores
-        edge_colors_originales <- g$edges$color
-        for (i in seq_along(g$nodes$id)) {
+
+                for (i in seq_along(g$nodes$id)) {
           if (g$nodes$id[i] == 1 || g$nodes$id[i] == rv$sublattice$size()) {
             g$nodes$color[i] <- "blue"
           }
@@ -773,11 +824,11 @@ server <- function(input, output, session) {
             g$nodes$color[i] <- "#97C2FC"
           }
         }
-        g$edges$color <- edge_colors_originales
 
 
         visNetworkProxy("plot2") %>%
           visUpdateNodes(nodes = g$nodes)
+
 
         # Muestro el siguiente paso
         output$nextStepConcepts <- renderText({
@@ -785,26 +836,24 @@ server <- function(input, output, session) {
         })
 
         # Actualizo lo de todos los conceptos
-        output$allConcepts <- renderText({
-          paste(capture.output(print(rv$sublattice), collapse = "\n"))
+        output$allConcepts <- renderTable({
+          parse_latex_concepts(rv$sublattice$to_latex())
         })
 
 
-        # Actualizo el historial
-        new <- rv$sublattice[chosenConcept]
 
-        nuevo_texto <- paste(capture.output(print(new)), collapse = "\n")
-        history(paste0(history(), "\n", nuevo_texto))
+         nuevo_texto <- paste(capture.output(print(new)), collapse = "\n")
+         history(paste0(history(), "\n", nuevo_texto))
+        print(new)
 
       # Si he llegado al final, se deja de pulsar
-        if(rv$sublattice$size() == 2){
-          hide("btnNextStep")
-          last <- rv$sublattice[rv$sublattice$size()]
+         if(rv$sublattice$size() == 2){
+           hide("btnNextStep")
+           last <- rv$sublattice[rv$sublattice$size()]
 
-          nuevo_texto <- paste(capture.output(print(last)), collapse = "\n")
-          history(paste0(history(), "\n", nuevo_texto))
-        }
-
+           nuevo_texto <- paste(capture.output(print(last)), collapse = "\n")
+           history(paste0(history(), "\n", nuevo_texto))
+         }
     })
 
     output$history <- renderText({

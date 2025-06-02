@@ -105,10 +105,13 @@ parse_latex_concepts <- function(latex_text) {
   # Dividir en líneas
   lines <- unlist(strsplit(latex_text, "\n"))
 
-  # Filtrar las líneas que contienen los conceptos
+  # Obtener las líneas que contienen conceptos (terminan en \\)
   concept_lines <- grep("^\\d+:.*\\\\\\\\$", lines, value = TRUE)
 
-  # Limpiar y extraer las partes entre llaves con regex
+  # Extraer el número de línea (row_id) desde el inicio de cada línea
+  row_ids <- as.integer(sub("^([0-9]+):.*", "\\1", concept_lines))
+
+  # Función para extraer lhs y rhs
   extract_concepts <- function(line) {
     # Eliminar código LaTeX innecesario
     line <- gsub("\\\\mathrm\\{([^}]*)\\}", "\\1", line)
@@ -119,23 +122,30 @@ parse_latex_concepts <- function(latex_text) {
     # Extraer las partes dentro de los conjuntos con regex
     matches <- regmatches(line, gregexpr("\\{[^}]*\\}", line))[[1]]
 
-    # Casos: ambos conjuntos (lhs y rhs) o solo rhs (cuando lhs está vacío)
     lhs <- if (length(matches) >= 1) gsub("^\\{|\\}$", "", matches[1]) else ""
     rhs <- if (length(matches) >= 2) gsub("^\\{|\\}$", "", matches[2]) else ""
+
+    # Eliminar barra invertida final si existe
+    lhs <- sub("\\\\$", "", lhs)
+    rhs <- sub("\\\\$", "", rhs)
 
     return(c(lhs = lhs, rhs = rhs))
   }
 
-  # Aplicar extracción
+  # Aplicar la función de extracción
   concept_pairs <- t(sapply(concept_lines, extract_concepts))
 
-  # Convertir a data.frame
+  # Crear el data.frame con row_id
   df <- as.data.frame(concept_pairs, stringsAsFactors = FALSE)
+  df$concept <- row_ids
 
-  df$lhs <- gsub("\\\\$", "", df$lhs)
-  df$rhs <- gsub("\\\\$", "", df$rhs)
+  # Reordenar columnas: row_id, lhs, rhs
+  df <- df[, c("concept", "lhs", "rhs")]
+
   return(df)
 }
+
+
 
 showPlot <- function(fc){
   dt <- parse_latex_concepts(fc$concepts$to_latex())
