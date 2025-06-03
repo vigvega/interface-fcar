@@ -59,29 +59,29 @@ server <- function(input, output, session) {
   #######################
 
   fca <- reactive({
-      # if(!(is.null(input$file))){
-      #   req(input$file)
-      #   ext <- tolower(tools::file_ext(input$file$name))
-      #   if(ext != "csv" && ext != "rds" && ext != "cxt"){
-      #     shinyalert(
-      #       title = "Warning",
-      #       text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
-      #       type = "warning"
-      #     )
-      #
-      #     FormalContext$new(planets) # para que no explote simplemente
-      #
-      #   }
-      #   else{
-      #     FormalContext$new(input$file$datapath)
-      # }
-      # }
-      #  else if(input$selectDataset != ""){
-      #    returnFCFromRepo(input$selectDataset)
-      #  }
-      #   else{
-         FormalContext$new(planets) # para que no explote simplemente
-      #   }
+        if(!(is.null(input$file))){
+          req(input$file)
+          ext <- tolower(tools::file_ext(input$file$name))
+          if(ext != "csv" && ext != "rds" && ext != "cxt"){
+            shinyalert(
+              title = "Warning",
+              text = "Unsupported file extension. Please upload a .csv, .rds or .cxt",
+              type = "warning"
+            )
+
+            FormalContext$new(planets) # para que no explote simplemente
+
+          }
+          else{
+            FormalContext$new(input$file$datapath)
+        }
+        }
+         else if(input$selectDataset != ""){
+           returnFCFromRepo(input$selectDataset)
+         }
+          else{
+          FormalContext$new(planets) # para que no explote simplemente
+          }
   })
 
 
@@ -299,7 +299,7 @@ server <- function(input, output, session) {
 
   # Aviso de que se van a calcular las implicaciones
        observeEvent(input$tabs, {
-         fca()$find_implications() # borrar
+         #fca()$find_implications() # borrar
 
          if (input$tabs == "ui_implications" && fca()$implications$cardinality() == 0) {
            showModal(modalDialog(
@@ -442,6 +442,7 @@ server <- function(input, output, session) {
         result <- fca()$implications$closure(set_attributes)
         paste(capture.output(print(result)))
       })
+
 
       output$downloadRdsImp <- downloadHandler(
         filename = function() {
@@ -729,13 +730,15 @@ server <- function(input, output, session) {
     output$initConcept <- renderTable({
       index_init <- getOneConcept(fca(), input$initAtt)
       d <- fca()$concepts[index_init]$to_latex()
-      parse_latex_concepts(d)
+      dt <- parse_latex_concepts(d)
+      dt[2:3]
     })
 
     output$targetConcept <- renderTable({
       index_target <- getOneConcept(fca(), input$targetAtt)
       d <- fca()$concepts[index_target]$to_latex()
-      parse_latex_concepts(d)
+      dt <- parse_latex_concepts(d)
+      dt[2:3]
     })
 
 
@@ -751,6 +754,22 @@ server <- function(input, output, session) {
         shinyalert("Oops!", "Those attributes are not reachable. Please, choose others.", type = "error")
       }
       else{
+        if(rv$sublattice$size() == 2){
+          hide("btnNextStep")
+
+          nueva_fila <- parse_latex_concepts(rv$sublattice[rv$sublattice$size()]$to_latex())
+          nueva_fila <- data.frame(
+            attributes = nueva_fila[2],
+            objects = nueva_fila[3],
+            stringsAsFactors = FALSE
+          )
+
+
+          history_actual <- history()
+          history(rbind(history_actual, nueva_fila))
+
+        }
+
         # Actualizo lo de todos los conceptos
         output$allConcepts <- renderTable({
           parse_latex_concepts(rv$sublattice$to_latex())
@@ -784,14 +803,10 @@ server <- function(input, output, session) {
       # Muestro el siguiente paso
       output$nextStepConcepts <- renderTable({
         d <- rv$sublattice$lower_neighbours(rv$sublattice[1])$to_latex()
-        parse_latex_concepts(d)
+        dt <- parse_latex_concepts(d)
+        dt[2:3]
       })
 
-      # Guardo avance en el historial
-      output$nextStepConcepts <- renderTable({
-        d <- rv$sublattice$lower_neighbours(rv$sublattice[1])$to_latex()
-        parse_latex_concepts(d)
-      })
 
       nueva_fila <- parse_latex_concepts(rv$sublattice[1]$to_latex())
       nueva_fila <- data.frame(
@@ -871,7 +886,8 @@ server <- function(input, output, session) {
         # Muestro el siguiente paso
         output$nextStepConcepts <- renderTable({
           d <- rv$sublattice$lower_neighbours(rv$sublattice[1])$to_latex()
-          parse_latex_concepts(d)
+          dt <- parse_latex_concepts(d)
+          dt[2:3]
         })
 
         # Actualizo lo de todos los conceptos
@@ -903,6 +919,7 @@ server <- function(input, output, session) {
 
            history_actual <- history()
            history(rbind(history_actual, nueva_fila))
+
          }
     })
 

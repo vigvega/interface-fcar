@@ -256,6 +256,7 @@ getGraph <- function(concepts){
   V(g)$attributes <- dt$attributes
 
 
+
   # idea: le pongo el texto de latex y que lo imprima como tal
 
   vis_data <- visNetwork::toVisNetworkData(g)
@@ -263,6 +264,11 @@ getGraph <- function(concepts){
     dplyr::mutate(label = glue::glue(
       "{label}" # yo quiero que el titulo sea -> fca()$concepts[V(g)]
     ))
+
+  vis_data$nodes <- vis_data$nodes |>
+    dplyr::mutate(title = glue::glue("{dt[[3]]}"))
+
+
 
   return(vis_data)
 
