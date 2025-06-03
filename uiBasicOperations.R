@@ -53,7 +53,7 @@ uiBasicOperations <- tabItem(tabName = "basic_operations",
                                                                 width = "100%")
                                                           ),
                                                           box(width = 12,
-                                                              title = "Intent output",
+                                                              title = "Extent output",
                                                               status = "primary",
                                                               solidHeader = TRUE,
                                                               uiOutput("extentResult")
@@ -72,7 +72,7 @@ uiBasicOperations <- tabItem(tabName = "basic_operations",
                                                                 width = "100%")
                                                           ),
                                                           box(width = 12,
-                                                              title = "Intent output",
+                                                              title = "Closure output",
                                                               status = "primary",
                                                               solidHeader = TRUE,
                                                               uiOutput("closureResult")

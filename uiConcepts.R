@@ -4,26 +4,39 @@ uiConcepts <-  tabItem(tabName = "ui_concepts",
                            navset_card_tab(
                              nav_panel("Autonomous Exploration",
                                        fluidRow(
-                                         column(8,
+                                         column(7,
                                                 div(style = "height: 60vh;  align-items: center;",
                                                     visNetworkOutput("plot", height = "520px")
                                                 )
                                          ),
-                                         column(4,
+                                         column(5,
                                                 div(style = "height: 60vh; overflow-y: auto; align-items: center;",
-                                                    h5("Concept selected:"),
-                                                    verbatimTextOutput("conceptSelected"),
-                                                    h5("Upper neighbours:"),
-                                                    verbatimTextOutput("upperNeighbours"),
-                                                    h5("Lower neighbours:"),
-                                                    verbatimTextOutput("lowerNeighbours")
+                                                    br(),
+                                                    box(width = 12,
+                                                        title = "Concept selected",
+                                                        status = "primary",
+                                                        solidHeader = TRUE,
+                                                        uiOutput("conceptSelected")
+                                                    ),
+                                                    box(width = 12,
+                                                        title = "Upper neighbours",
+                                                        status = "primary",
+                                                        solidHeader = TRUE,
+                                                        uiOutput("upperNeighbours")
+                                                    ),
+                                                    box(width = 12,
+                                                        title = "Lower neighbours",
+                                                        status = "primary",
+                                                        solidHeader = TRUE,
+                                                        uiOutput("lowerNeighbours")
+                                                    )
                                                 )
                                          )
                                        )
                              ),
                              nav_panel("Guided exploration",
                                        fluidRow(
-                                         column(8,
+                                         column(7,
                                                 fluidRow(
                                                   column(5,
                                                          selectInput(
@@ -61,27 +74,43 @@ uiConcepts <-  tabItem(tabName = "ui_concepts",
                                                   )
                                                 )
                                          ),
-                                         column(4,
+                                         column(5,
                                                 br(),
                                                 navset_card_tab(
                                                   nav_panel("Concepts",
                                                             div(style = "height: 60vh; overflow: auto",
                                                                 br(),
-                                                                verbatimTextOutput("allConcepts")
+                                                                tableOutput("allConcepts")
                                                             )
                                                   ),
                                                   nav_panel("Selection",
                                                             br(),
-                                                            p("Initial concept"),
-                                                            verbatimTextOutput("initConcept"),
-                                                            p("Target concept"),
-                                                            verbatimTextOutput("targetConcept"),
-                                                            p("Next step:"),
-                                                            verbatimTextOutput("nextStepConcepts")
+                                                            div(style = "height: 60vh; overflow-y: auto; align-items: center;",
+                                                                box(width = 12,
+                                                                    title = "Initial concept",
+                                                                    status = "primary",
+                                                                    solidHeader = TRUE,
+                                                                    uiOutput("initConcept")
+                                                                ),
+                                                                box(width = 12,
+                                                                    title = "Target concept",
+                                                                    status = "primary",
+                                                                    solidHeader = TRUE,
+                                                                    uiOutput("targetConcept")
+                                                                ),
+                                                                box(width = 12,
+                                                                    title = "Next step",
+                                                                    status = "primary",
+                                                                    solidHeader = TRUE,
+                                                                    uiOutput("nextStepConcepts")
+                                                                )
+                                                            )
                                                   ),
                                                   nav_panel("Exploration history",
                                                             br(),
-                                                            verbatimTextOutput("history")
+                                                            div(style = "height: 60vh; overflow-y: auto; align-items: center;",
+                                                                uiOutput("history")
+                                                            )
                                                   )
                                                 )
                                          )

@@ -31,7 +31,7 @@ uiImplications <- tabItem(tabName = "ui_implications",
                                    box(width = 12,
                                        title = "Implications",
                                        status = "primary",
-                                       div(style = "height: 70vh; overflow-y: auto; align-items: center;",
+                                       div(style = "height: 55vh; overflow-y: auto; ",
                                            selectInput("selectRulesImplications",
                                                        "Choose rules to apply:",
                                                        list(
@@ -40,15 +40,12 @@ uiImplications <- tabItem(tabName = "ui_implications",
                                                          "Reduction" = "reduction",
                                                          "Simplification" = "simplification"),
                                                        multiple = TRUE),
-                                           verbatimTextOutput("fcImplications"),
-                                           selectInput("selectClosure",
-                                                       "Choose attributes to compute closure:",
-                                                       list("--Select--" = ""), multiple = TRUE),
-                                           verbatimTextOutput("implicationsClosure")
-                                           # p("Or get table for your LaTex doc..."),
-                                           # actionButton("createLatexImplications", "Create table in LaTeX format", class = "btn btn-lg btn-block")
-
-                                       )
+                                           uiOutput("fcImplications")
+                                       ),
+                                       selectInput("selectClosure",
+                                                   "Choose attributes to compute closure:",
+                                                   list("--Select--" = ""), multiple = TRUE),
+                                       textOutput("implicationsClosure")
                                    )
                             )
 
@@ -64,9 +61,7 @@ uiImplications <- tabItem(tabName = "ui_implications",
                                          actionBttn("createLatexImplications", "Create table in LaTeX format", icon = icon("leaf"),
                                                     style = "material-circle", size = "sm", color = "primary"),
                                          downloadBttn("downloadRdsImp", "Download",
-                                                      style = "material-circle", size = "sm", color = "primary"),
-                                         #actionBttn("btnGoConcepts", "Go to concepts", icon = icon("arrow-right"),
-                                          #          style = "unite", size = "sm", color = "primary")
+                                                      style = "material-circle", size = "sm", color = "primary")
                                      )
                                  )
                           )

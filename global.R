@@ -111,7 +111,7 @@ parse_latex_concepts <- function(latex_text) {
   # Extraer el número de línea (row_id) desde el inicio de cada línea
   row_ids <- as.integer(sub("^([0-9]+):.*", "\\1", concept_lines))
 
-  # Función para extraer lhs y rhs
+  # Función para extraer concepts y attributes
   extract_concepts <- function(line) {
     # Eliminar código LaTeX innecesario
     line <- gsub("\\\\mathrm\\{([^}]*)\\}", "\\1", line)
@@ -122,14 +122,14 @@ parse_latex_concepts <- function(latex_text) {
     # Extraer las partes dentro de los conjuntos con regex
     matches <- regmatches(line, gregexpr("\\{[^}]*\\}", line))[[1]]
 
-    lhs <- if (length(matches) >= 1) gsub("^\\{|\\}$", "", matches[1]) else ""
-    rhs <- if (length(matches) >= 2) gsub("^\\{|\\}$", "", matches[2]) else ""
+    objects <- if (length(matches) >= 1) gsub("^\\{|\\}$", "", matches[1]) else ""
+    attributes <- if (length(matches) >= 2) gsub("^\\{|\\}$", "", matches[2]) else ""
 
     # Eliminar barra invertida final si existe
-    lhs <- sub("\\\\$", "", lhs)
-    rhs <- sub("\\\\$", "", rhs)
+    objects <- sub("\\\\$", "", objects)
+    attributes <- sub("\\\\$", "", attributes)
 
-    return(c(lhs = lhs, rhs = rhs))
+    return(c(objects = objects, attributes = attributes))
   }
 
   # Aplicar la función de extracción
@@ -137,10 +137,55 @@ parse_latex_concepts <- function(latex_text) {
 
   # Crear el data.frame con row_id
   df <- as.data.frame(concept_pairs, stringsAsFactors = FALSE)
-  df$concept <- row_ids
+  df$id <- row_ids
 
-  # Reordenar columnas: row_id, lhs, rhs
-  df <- df[, c("concept", "lhs", "rhs")]
+  # Reordenar columnas: row_id, concepts, attributes
+  df <- df[, c("id", "objects", "attributes")]
+
+  return(df)
+}
+
+parse_latex_implications <- function(latex_text) {
+  # Dividir el texto en líneas
+  lines <- unlist(strsplit(latex_text, "\n"))
+
+  # Filtrar las líneas con implicaciones que terminan en doble barra
+  implication_lines <- grep("^\\d+:.*\\\\\\\\$", lines, value = TRUE)
+
+  # Extraer el número de línea (id)
+  row_ids <- as.integer(sub("^([0-9]+):.*", "\\1", implication_lines))
+
+  # Función para limpiar y extraer antecedente y consecuente
+  extract_implication <- function(line) {
+    # Limpiar LaTeX innecesario
+    line <- gsub("\\\\mathrm\\{([^}]*)\\}", "\\1", line)
+    line <- gsub("\\\\ensuremath\\{?\\\\Rightarrow\\}?", "=>", line)
+    line <- gsub("\\\\left|\\\\right|\\\\\\(|\\\\\\)|\\$|\\\\,", "", line)
+    line <- gsub("\\\\_", "_", line)
+    line <- gsub("&", "", line)
+
+    # Extraer los conjuntos entre llaves
+    parts <- regmatches(line, gregexpr("\\{[^}]*\\}", line))[[1]]
+
+    antecedent <- if (length(parts) >= 1) gsub("^\\{|\\}$", "", parts[1]) else ""
+    consequent <- if (length(parts) >= 2) gsub("^\\{|\\}$", "", parts[2]) else ""
+
+    # Eliminar barra invertida final si existe
+    antecedent <- sub("\\\\$", "", antecedent)
+    consequent <- sub("\\\\$", "", consequent)
+
+    return(c("if" = antecedent, "then" = consequent))
+  }
+
+  # Aplicar la extracción a cada línea
+  implication_pairs <- t(sapply(implication_lines, extract_implication))
+
+  # Crear el data.frame
+  df <- as.data.frame(implication_pairs, stringsAsFactors = FALSE)
+  df$Rule <- row_ids
+
+  # Reordenar columnas
+  df <- df[, c("Rule", "if", "then")]
 
   return(df)
 }
@@ -158,8 +203,8 @@ showPlot <- function(fc){
     M
   )
 
-  V(g)$lhs <- dt$lhs
-  V(g)$rhs <- dt$rhs
+  V(g)$objects <- dt$objects
+  V(g)$attributes <- dt$attributes
 
 
   # idea: le pongo el texto de latex y que lo imprima como tal
@@ -207,8 +252,8 @@ getGraph <- function(concepts){
     M
   )
 
-  V(g)$lhs <- dt$lhs
-  V(g)$rhs <- dt$rhs
+  V(g)$objects <- dt$objects
+  V(g)$attributes <- dt$attributes
 
 
   # idea: le pongo el texto de latex y que lo imprima como tal

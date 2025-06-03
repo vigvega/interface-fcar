@@ -25,9 +25,9 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     id="tabs",
     #menuItem("Home", tabName = "home", icon = icon("home")),
-    #menuItem("Upload data", tabName = "upload_data", icon = icon("play")),
-    #menuItem("Basic operations", tabName = "basic_operations", icon = icon("play")),
-    menuItem("Concepts", tabName = "ui_concepts", icon = icon("home")),
+    menuItem("Upload data", tabName = "upload_data", icon = icon("file")),
+    menuItem("Basic operations", tabName = "basic_operations", icon = icon("play")),
+    menuItem("Concepts", tabName = "ui_concepts", icon = icon("object-ungroup")),
     menuItem("Implications", tabName = "ui_implications", icon = icon("circle-info"))
   )
 )
@@ -59,12 +59,12 @@ body <- dashboardBody(
                 navset_card_tab(
                   nav_panel("Autonomous Exploration",
                             fluidRow(
-                              column(8,
+                              column(7,
                                      div(style = "height: 60vh;  align-items: center;",
                                          visNetworkOutput("plot", height = "520px")
                                      )
                               ),
-                              column(4,
+                              column(5,
                                      div(style = "height: 60vh; overflow-y: auto; align-items: center;",
                                          br(),
                                          box(width = 12,
@@ -72,7 +72,7 @@ body <- dashboardBody(
                                              status = "primary",
                                              solidHeader = TRUE,
                                              uiOutput("conceptSelected")
-                                             ),
+                                         ),
                                          box(width = 12,
                                              title = "Upper neighbours",
                                              status = "primary",
@@ -91,7 +91,7 @@ body <- dashboardBody(
                   ),
                   nav_panel("Guided exploration",
                             fluidRow(
-                              column(8,
+                              column(7,
                                      fluidRow(
                                        column(5,
                                               selectInput(
@@ -129,7 +129,7 @@ body <- dashboardBody(
                                        )
                                      )
                               ),
-                              column(4,
+                              column(5,
                                      br(),
                                      navset_card_tab(
                                        nav_panel("Concepts",
@@ -140,17 +140,18 @@ body <- dashboardBody(
                                        ),
                                        nav_panel("Selection",
                                                  br(),
-                                                 box(width = 12,
-                                                     title = "Initial concept",
-                                                     status = "primary",
-                                                     solidHeader = TRUE,
-                                                     uiOutput("initConcept")
+                                                 div(style = "height: 60vh; overflow-y: auto; align-items: center;",
+                                                     box(width = 12,
+                                                         title = "Initial concept",
+                                                         status = "primary",
+                                                         solidHeader = TRUE,
+                                                         uiOutput("initConcept")
                                                      ),
-                                                 box(width = 12,
-                                                     title = "Target concept",
-                                                     status = "primary",
-                                                     solidHeader = TRUE,
-                                                     uiOutput("targetConcept")
+                                                     box(width = 12,
+                                                         title = "Target concept",
+                                                         status = "primary",
+                                                         solidHeader = TRUE,
+                                                         uiOutput("targetConcept")
                                                      ),
                                                      box(width = 12,
                                                          title = "Next step",
@@ -158,10 +159,13 @@ body <- dashboardBody(
                                                          solidHeader = TRUE,
                                                          uiOutput("nextStepConcepts")
                                                      )
+                                                 )
                                        ),
                                        nav_panel("Exploration history",
                                                  br(),
-                                                 verbatimTextOutput("history")
+                                                 div(style = "height: 60vh; overflow-y: auto; align-items: center;",
+                                                     uiOutput("history")
+                                                 )
                                        )
                                      )
                               )
@@ -187,7 +191,6 @@ body <- dashboardBody(
                    )
             )
     )
-
   )
 )
 
