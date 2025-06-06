@@ -705,9 +705,12 @@ server <- function(input, output, session) {
       input$targetAtt}, {
       # Nodo inicial
       index_init <- getOneConcept(fca(), input$initAtt)
-
+      print("Init")
+      print(index_init)
       # Nodo target
-      index_target <- getOneConcept(fca(), input$targetAtt)
+      list <- c(input$initAtt, input$targetAtt)
+      #print(list)
+      index_target <- getOneConcept(fca(), list)
 
       nodes <- getGraph(fca()$concepts)$nodes
 
@@ -735,7 +738,8 @@ server <- function(input, output, session) {
     })
 
     output$targetConcept <- renderTable({
-      index_target <- getOneConcept(fca(), input$targetAtt)
+      list <- c(input$initAtt, input$targetAtt)
+      index_target <- getOneConcept(fca(), list)
       d <- fca()$concepts[index_target]$to_latex()
       dt <- parse_latex_concepts(d)
       dt[2:3]
@@ -745,9 +749,19 @@ server <- function(input, output, session) {
     observeEvent(input$btnBeginExploration, {
       # Construyo el subretículo
       show("btnNextStep")
+      list <- c(input$initAtt, input$targetAtt)
       init <- getOneConcept(fca(), input$initAtt)
-      target <- getOneConcept(fca(), input$targetAtt)
-      rv$sublattice <- getSublattice(fca()$concepts, init, target)
+      target <- getOneConcept(fca(), list)
+
+
+      print("INIIIIIT")
+      print(fca()$concepts[init])
+      print("TARGGGGEEEEtttt")
+      print(fca()$concepts[target])
+
+      rv$sublattice <- getSublattice2(fca()$concepts, init, target)
+      print("SUBLATTICEEEE")
+      print(rv$sublattice)
 
       # Compruebo si ha sido posible crearlo
       if(is.null(rv$sublattice)){
@@ -857,7 +871,7 @@ server <- function(input, output, session) {
         new <- rv$sublattice[chosenConcept]
 
 
-        rv$sublattice <- getSublattice(rv$sublattice, rv$sublattice[chosenConcept], rv$sublattice[rv$sublattice$size()])
+        rv$sublattice <- getSublattice2(rv$sublattice, chosenConcept, rv$sublattice$size())
         g <- getGraph(rv$sublattice)
         output$plot2 <- renderVisNetwork({
           showPlot2(g)

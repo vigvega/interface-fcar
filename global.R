@@ -342,14 +342,49 @@ getSublattice <- function(concepts, i, t){
   supIntents <- sup$intents()
   supExtents <- sup$extents()
 
-  sameAtt <- fcaR:::.equal_sets(subIntents, supIntents)
-  sameObj <- identical <- fcaR:::.equal_sets(subExtents, supExtents)
 
-  indexes <- which(Matrix::colSums(sameAtt) == 1 & Matrix::colSums(sameObj) == 1)
+  sameAtt <- fcaR:::.equal_sets(subIntents, supIntents)
+  sameObj <- fcaR:::.equal_sets(subExtents, supExtents)
+
+  indexes <- which(Matrix::rowSums(sameAtt) == 1 & Matrix::rowSums(sameObj) == 1)
+  print(indexes)
   sublattice <- concepts$sublattice(indexes)
 
   return(sublattice)
 }
+
+getSublattice2 <- function(concepts, i, t) {
+  # Obtener subconceptos de i y superconceptos de t
+  sub <- concepts$subconcepts(i)
+  sup <- concepts$superconcepts(t)
+
+  # Obtener intents y extents
+  subIntents <- sub$intents()
+  subExtents <- sub$extents()
+
+  supIntents <- sup$intents()
+  supExtents <- sup$extents()
+
+  # Comparar cada sub con todos los conceptos originales
+  allIntents <- concepts$intents()
+  allExtents <- concepts$extents()
+
+  # Obtener índices de los subconceptos de i dentro del conjunto original
+  subMatches <- which(Matrix::colSums(fcaR:::.equal_sets(subIntents, allIntents) &
+                                        fcaR:::.equal_sets(subExtents, allExtents)) == 1)
+
+  # Obtener índices de los superconceptos de t dentro del conjunto original
+  supMatches <- which(Matrix::colSums(fcaR:::.equal_sets(supIntents, allIntents) &
+                                        fcaR:::.equal_sets(supExtents, allExtents)) == 1)
+
+  # Intersección de ambos conjuntos
+  indexes <- intersect(subMatches, supMatches)
+  sublattice <- concepts$sublattice(indexes)
+
+  return(sublattice)
+}
+
+
 
 indexLowerNeighbours <- function(concepts, c){
   n <- concepts$lower_neighbours(c)

@@ -18,7 +18,7 @@ uiUploadData <- tabItem(tabName = "upload_data",
                                    ),
                                    column(4,
                                           br(),
-                                          input_task_button("connectRepo", "Find datasets")
+                                          input_task_button("connectRepo", "Connect")
                                    )
                                  ),
                                  textOutput("connectionFailed")
