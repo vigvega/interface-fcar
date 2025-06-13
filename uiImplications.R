@@ -29,9 +29,11 @@ uiImplications <- tabItem(tabName = "ui_implications",
                             ),
                             column(6,
                                    box(width = 12,
-                                       title = "Implications",
+                                       title = "",
                                        status = "primary",
-                                       div(style = "height: 55vh; overflow-y: auto; ",
+                                       div(style = "height: 70vh; overflow-y: auto; ",
+                                           navset_card_tab(
+                                             nav_panel("Implications",
                                            selectInput("selectRulesImplications",
                                                        "Choose rules to apply:",
                                                        list(
@@ -42,10 +44,13 @@ uiImplications <- tabItem(tabName = "ui_implications",
                                                        multiple = TRUE),
                                            uiOutput("fcImplications")
                                        ),
+                                       nav_panel("Closure",
                                        selectInput("selectClosure",
                                                    "Choose attributes to compute closure:",
                                                    list("--Select--" = ""), multiple = TRUE),
-                                       textOutput("implicationsClosure")
+                                       uiOutput("implicationsClosure")
+                                       )
+                                           )
                                    )
                             )
 
@@ -65,4 +70,5 @@ uiImplications <- tabItem(tabName = "ui_implications",
                                      )
                                  )
                           )
+)
 )

@@ -429,19 +429,20 @@ server <- function(input, output, session) {
         )
       })
 
-      output$implicationsClosure <- renderText({
 
-        if(is.null(input$selectClosure)){
-          return("Nothing selected")
-        }
 
+      output$implicationsClosure <- renderTable({
         set_attributes <- Set$new(fca()$attributes)
         sapply(input$selectClosure, function(x){
           do.call(set_attributes$assign, setNames(list(1), x))
         })
-        result <- fca()$implications$closure(set_attributes)
-        paste(capture.output(print(result)))
-      })
+        result <- fca()$implications$closure(set_attributes, reduce = TRUE)$implications$to_latex()
+
+        print("ENTRO")
+
+        parse_latex_implications(result)
+        })
+
 
 
       output$downloadRdsImp <- downloadHandler(
